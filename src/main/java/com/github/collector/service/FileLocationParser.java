@@ -1,9 +1,6 @@
 package com.github.collector.service;
 
-import com.github.bottomlessarchive.warc.service.content.response.domain.ResponseContentBlock;
-import com.github.bottomlessarchive.warc.service.record.domain.WarcRecord;
 import com.github.collector.service.domain.ParsingContext;
-import java.util.List;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;

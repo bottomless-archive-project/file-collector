@@ -1,9 +1,9 @@
 package com.github.collector.command;
 
+import com.github.bottomlessarchive.commoncrawl.WarcLocationFactory;
 import com.github.bottomlessarchive.warc.service.WarcRecordStreamFactory;
 import com.github.bottomlessarchive.warc.service.record.domain.WarcRecord;
 import com.github.collector.configuration.FileCollectorProperties;
-import com.github.collector.service.CommonCrawlWarcLocationFactory;
 import com.github.collector.service.FileDownloader;
 import com.github.collector.service.FileLocationParser;
 import com.github.collector.service.FileValidator;
@@ -20,7 +20,7 @@ import reactor.core.scheduler.Schedulers;
 @RequiredArgsConstructor
 public class DownloaderCommand implements CommandLineRunner {
 
-    private final CommonCrawlWarcLocationFactory commonCrawlWarcLocationFactory;
+    private final WarcLocationFactory warcLocationFactory;
     private final FileCollectorProperties fileCollectorProperties;
     private final ParsingContextFactory parsingContextFactory;
     private final FileLocationParser fileLocationParser;
@@ -33,7 +33,7 @@ public class DownloaderCommand implements CommandLineRunner {
             throw new RuntimeException("No file types are selected for collection!");
         }
 
-        Flux.fromIterable(commonCrawlWarcLocationFactory.newUrls(fileCollectorProperties.getCrawlId()))
+        Flux.fromIterable(warcLocationFactory.newUrls(fileCollectorProperties.getCrawlId()))
             .flatMap(insideWarcLocation -> Flux.fromStream(() -> WarcRecordStreamFactory.streamOf(insideWarcLocation)))
             .filter(WarcRecord::isResponse)
             .map(parsingContextFactory::buildParsingContext)
