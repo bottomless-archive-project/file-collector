@@ -44,8 +44,8 @@ dependencies {
 
     compile group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
     compile group: 'com.github.davidmoten', name: 'io-extras', version: '0.1'
-    compile group: 'com.github.bottomless-archive-project', name: 'java-warc', version: '1.0.0'
-    compile group: 'com.github.bottomless-archive-project', name: 'common-crawl-client', version: '2943318d20'
+    compile group: 'com.github.bottomless-archive-project', name: 'java-warc', version: 'a2faac3ab9'
+    compile group: 'com.github.bottomless-archive-project', name: 'common-crawl-client', version: 'd2e0d136c3'
 
     // Lombok
     compileOnly('org.projectlombok:lombok')

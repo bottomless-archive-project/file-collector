@@ -3,6 +3,7 @@ package com.github.collector.service;
 import com.github.collector.configuration.FileCollectorProperties;
 import java.nio.file.Path;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -19,6 +20,7 @@ public class FileDownloader {
 
     private final FileCollectorProperties fileCollectorProperties;
     private final WebClient downloaderWebClient;
+    private final AtomicLong downloadedFileCounter = new AtomicLong();
 
     public Mono<Path> downloadFile(final String fileLocation) {
         final String id = UUID.randomUUID().toString();
@@ -34,7 +36,13 @@ public class FileDownloader {
     }
 
     private Mono<Path> acquireFile(final String downloadTarget, final Path resultLocation) {
-        log.info("Downloading file: " + downloadTarget);
+        final long downloadedFileCount = downloadedFileCounter.incrementAndGet();
+
+        if (downloadedFileCount % 100 == 0) {
+            log.info("Downloaded {} files!", downloadedFileCount);
+        }
+
+        log.debug("Downloading file: " + downloadTarget);
 
         try {
             final Flux<DataBuffer> dataBufferFlux = newDownloadRequest(downloadTarget);

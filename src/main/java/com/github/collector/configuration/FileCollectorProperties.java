@@ -11,5 +11,6 @@ import org.springframework.stereotype.Component;
 public class FileCollectorProperties {
 
     private String crawlId;
+    private int wardId;
     private List<String> types;
 }
