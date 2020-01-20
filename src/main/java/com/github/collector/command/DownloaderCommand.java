@@ -2,6 +2,7 @@ package com.github.collector.command;
 
 import com.github.bottomlessarchive.commoncrawl.WarcLocationFactory;
 import com.github.bottomlessarchive.warc.service.WarcRecordStreamFactory;
+import com.github.bottomlessarchive.warc.service.content.response.domain.ResponseContentBlock;
 import com.github.bottomlessarchive.warc.service.record.domain.WarcRecord;
 import com.github.bottomlessarchive.warc.service.record.domain.WarcRecordType;
 import com.github.collector.configuration.FileCollectorProperties;
@@ -51,7 +52,7 @@ public class DownloaderCommand implements CommandLineRunner {
             .subscribe();
     }
 
-    private Flux<WarcRecord> openWarcLocation(final URL warcLocation) {
+    private Flux<WarcRecord<ResponseContentBlock>> openWarcLocation(final URL warcLocation) {
         log.info("Started to download warc file: {}.", warcLocation);
 
         return Flux.fromStream(() -> WarcRecordStreamFactory.streamOf(warcLocation, List.of(WarcRecordType.RESPONSE)));

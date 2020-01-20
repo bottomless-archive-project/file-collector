@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class ParsingContextFactory {
 
-    public ParsingContext buildParsingContext(final WarcRecord warcRecord) {
+    public ParsingContext buildParsingContext(final WarcRecord<ResponseContentBlock> warcRecord) {
         final String warcRecordUrl = warcRecord.getHeader("WARC-Target-URI");
-        final String contentString = ((ResponseContentBlock) warcRecord.getWarcContentBlock()).getPayloadAsString();
+        final String contentString = warcRecord.getContentBlock().getPayloadAsString();
 
         return ParsingContext.builder()
             .baseUrl(warcRecordUrl)
