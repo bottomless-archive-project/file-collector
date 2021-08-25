@@ -1,56 +1,60 @@
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
-apply plugin: 'java'
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_13
-    targetCompatibility = JavaVersion.VERSION_13
-}
-
-group 'org.example'
-version '1.0-SNAPSHOT'
-
 buildscript {
     ext {
-        springBootVersion = '2.2.4.RELEASE'
+        springBootVersion = '2.5.4'
     }
     repositories {
         mavenCentral()
         maven {
             url "https://plugins.gradle.org/m2/"
         }
-        jcenter()
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
     }
 }
 
-repositories {
-    mavenCentral()
-    maven {
-        url 'https://jitpack.io'
+allprojects {
+    repositories {
+        mavenCentral()
+        maven {
+            url 'https://jitpack.io'
+        }
+    }
+
+    apply plugin: 'java'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_16
+        targetCompatibility = JavaVersion.VERSION_16
+    }
+
+    group 'org.example'
+    version '1.0-SNAPSHOT'
+
+    apply plugin: 'io.spring.dependency-management'
+
+    dependencyManagement {
+        imports {
+            mavenBom SpringBootPlugin.BOM_COORDINATES
+        }
+    }
+
+    apply plugin: 'org.springframework.boot'
+
+    dependencies {
+        implementation group: 'org.springframework.boot', name: 'spring-boot-starter-webflux'
     }
 }
-
-apply plugin: 'io.spring.dependency-management'
-
-dependencyManagement {
-    imports {
-        mavenBom SpringBootPlugin.BOM_COORDINATES
-    }
-}
-
-apply plugin: 'org.springframework.boot'
 
 dependencies {
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-webflux'
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-reactor-netty'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-reactor-netty'
 
-    compile group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
-    compile group: 'com.github.davidmoten', name: 'io-extras', version: '0.1'
-    compile group: 'com.github.bottomless-archive-project', name: 'java-warc', version: '33244f39e9'
-    compile group: 'com.github.bottomless-archive-project', name: 'common-crawl-client', version: 'd2e0d136c3'
+    implementation group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
+    implementation group: 'com.github.davidmoten', name: 'io-extras', version: '0.1'
+    implementation group: 'com.github.bottomless-archive-project', name: 'java-warc', version: '33244f39e9'
+    implementation group: 'com.github.bottomless-archive-project', name: 'common-crawl-client', version: 'd2e0d136c3'
 
     // Configuration
     compileOnly group: 'org.springframework.boot', name: 'spring-boot-configuration-processor'
