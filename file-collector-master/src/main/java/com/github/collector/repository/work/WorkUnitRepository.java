@@ -1,0 +1,41 @@
+package com.github.collector.repository.work;
+
+import com.github.collector.repository.work.domain.WorkUnitDatabaseEntity;
+import com.github.collector.service.domain.WorkUnitStatus;
+import com.mongodb.client.MongoCollection;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.Optional;
+import java.util.UUID;
+
+import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Updates.set;
+
+@Component
+@RequiredArgsConstructor
+public class WorkUnitRepository {
+
+    private final MongoCollection<WorkUnitDatabaseEntity> documentDatabaseEntityMongoCollection;
+
+    public Optional<WorkUnitDatabaseEntity> findById(final UUID documentId) {
+        return Optional.ofNullable(
+                documentDatabaseEntityMongoCollection.find(eq("_id", documentId))
+                        .first()
+        );
+    }
+
+    public Optional<WorkUnitDatabaseEntity> startWorkUnit() {
+        return Optional.ofNullable(
+                documentDatabaseEntityMongoCollection.findOneAndUpdate(
+                        eq("status", WorkUnitStatus.CREATED.name()),
+                        set("status", WorkUnitStatus.UNDER_PROCESSING.name())
+                )
+        );
+    }
+
+    public void finishWorkUnit(final UUID documentId) {
+        documentDatabaseEntityMongoCollection.updateOne(eq("_id", documentId),
+                set("status", WorkUnitStatus.FINISHED.name()));
+    }
+}
