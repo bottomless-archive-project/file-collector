@@ -7,5 +7,7 @@ buildscript {
 dependencies {
     implementation group: 'org.mongodb', name: 'mongodb-driver-sync'
 
+    implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
+
     implementation group: 'com.github.bottomless-archive-project', name: 'common-crawl-client', version: 'd2e0d136c3'
 }
