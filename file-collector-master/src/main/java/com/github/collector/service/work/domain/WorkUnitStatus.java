@@ -1,4 +1,4 @@
-package com.github.collector.service.domain;
+package com.github.collector.service.work.domain;
 
 public enum WorkUnitStatus {
 

@@ -2,7 +2,7 @@ package com.github.collector.service;
 
 import com.github.bottomlessarchive.warc.service.content.response.domain.ResponseContentBlock;
 import com.github.bottomlessarchive.warc.service.record.domain.WarcRecord;
-import com.github.collector.service.domain.ParsingContext;
+import com.github.collector.service.work.domain.ParsingContext;
 import org.springframework.stereotype.Service;
 
 @Service

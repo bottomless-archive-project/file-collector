@@ -1,6 +1,6 @@
 package com.github.collector.service;
 
-import com.github.collector.service.domain.ParsingContext;
+import com.github.collector.service.work.domain.ParsingContext;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;

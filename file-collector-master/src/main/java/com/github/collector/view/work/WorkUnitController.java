@@ -1,8 +1,8 @@
 package com.github.collector.view.work;
 
-import com.github.collector.service.WorkUnitFactory;
-import com.github.collector.service.WorkUnitService;
-import com.github.collector.service.domain.WorkUnit;
+import com.github.collector.service.work.WorkUnitFactory;
+import com.github.collector.service.work.WorkUnitService;
+import com.github.collector.service.work.domain.WorkUnit;
 import com.github.collector.view.work.request.FinishWorkUnitRequest;
 import com.github.collector.view.work.response.StartWorkUnitResponse;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @RestController
