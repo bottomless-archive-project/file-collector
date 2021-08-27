@@ -1,6 +1,6 @@
 package com.github.collector.view.location;
 
-import com.github.collector.service.DocumentLocationService;
+import com.github.collector.service.location.DocumentLocationService;
 import com.github.collector.view.location.request.DeduplicateDocumentLocationRequest;
 import com.github.collector.view.location.response.DeduplicateDocumentLocationResponse;
 import lombok.RequiredArgsConstructor;

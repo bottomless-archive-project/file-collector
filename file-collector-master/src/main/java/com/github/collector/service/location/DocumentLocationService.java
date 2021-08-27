@@ -1,4 +1,4 @@
-package com.github.collector.service;
+package com.github.collector.service.location;
 
 import com.github.collector.repository.location.DocumentLocationRepository;
 import com.github.collector.repository.location.domain.DocumentLocationDatabaseEntity;

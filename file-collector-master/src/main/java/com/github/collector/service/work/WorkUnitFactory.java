@@ -2,6 +2,7 @@ package com.github.collector.service.work;
 
 import com.github.collector.repository.work.WorkUnitRepository;
 import com.github.collector.service.work.domain.WorkUnit;
+import com.github.collector.service.work.domain.WorkUnitStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +20,7 @@ public class WorkUnitFactory {
                 .map(workUnitDatabaseEntity -> WorkUnit.builder()
                         .id(workUnitDatabaseEntity.getId())
                         .location(workUnitDatabaseEntity.getLocation())
-                        .underProcessing(workUnitDatabaseEntity.isUnderProcessing())
+                        .status(WorkUnitStatus.valueOf(workUnitDatabaseEntity.getStatus()))
                         .build()
                 );
     }

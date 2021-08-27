@@ -1,5 +1,6 @@
-package com.github.collector.repository.location;
+package com.github.collector.repository.document;
 
+import com.github.collector.repository.document.domain.DocumentDatabaseEntity;
 import com.github.collector.repository.location.domain.DocumentLocationDatabaseEntity;
 import com.mongodb.MongoBulkWriteException;
 import com.mongodb.bulk.BulkWriteError;
@@ -13,23 +14,23 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class DocumentLocationRepository {
+public class DocumentRepository {
 
-    private final MongoCollection<DocumentLocationDatabaseEntity> documentLocationDatabaseEntityMongoCollection;
+    private final MongoCollection<DocumentDatabaseEntity> documentDatabaseEntityMongoCollection;
 
-    public List<DocumentLocationDatabaseEntity> insertDocuments(
-            final List<DocumentLocationDatabaseEntity> documentLocationDatabaseEntities) {
+    public List<DocumentDatabaseEntity> insertDocuments(
+            final List<DocumentDatabaseEntity> documentDatabaseEntities) {
 
         try {
-            documentLocationDatabaseEntityMongoCollection.insertMany(documentLocationDatabaseEntities,
+            documentDatabaseEntityMongoCollection.insertMany(documentDatabaseEntities,
                     new InsertManyOptions().ordered(false));
         } catch (MongoBulkWriteException mongoBulkWriteException) {
             mongoBulkWriteException.getWriteErrors().stream()
                     .map(BulkWriteError::getIndex)
                     .sorted(Comparator.<Integer>naturalOrder().reversed())
-                    .forEach(o -> documentLocationDatabaseEntities.remove((int) o));
+                    .forEach(o -> documentDatabaseEntities.remove((int) o));
         }
 
-        return documentLocationDatabaseEntities;
+        return documentDatabaseEntities;
     }
 }
