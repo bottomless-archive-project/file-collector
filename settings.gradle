@@ -1,3 +1,5 @@
 rootProject.name = 'file-collector'
 include 'file-collector-master'
+include 'file-collector-slave'
+include 'file-collector-common'
 

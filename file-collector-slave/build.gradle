@@ -1,0 +1,6 @@
+dependencies {
+    implementation project(':file-collector-common')
+
+    implementation group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
+    implementation group: 'com.github.bottomless-archive-project', name: 'java-warc', version: '33244f39e9'
+}

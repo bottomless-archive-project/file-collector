@@ -5,6 +5,8 @@ buildscript {
 }
 
 dependencies {
+    implementation project(':file-collector-common')
+
     implementation group: 'org.mongodb', name: 'mongodb-driver-sync'
 
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
