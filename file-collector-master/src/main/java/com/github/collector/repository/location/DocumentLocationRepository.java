@@ -8,6 +8,7 @@ import com.mongodb.client.model.InsertManyOptions;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -19,6 +20,7 @@ public class DocumentLocationRepository {
 
     public List<DocumentLocationDatabaseEntity> insertDocuments(
             final List<DocumentLocationDatabaseEntity> documentLocationDatabaseEntities) {
+        final List<DocumentLocationDatabaseEntity> result = new ArrayList<>(documentLocationDatabaseEntities);
 
         try {
             documentLocationDatabaseEntityMongoCollection.insertMany(documentLocationDatabaseEntities,
@@ -27,9 +29,9 @@ public class DocumentLocationRepository {
             mongoBulkWriteException.getWriteErrors().stream()
                     .map(BulkWriteError::getIndex)
                     .sorted(Comparator.<Integer>naturalOrder().reversed())
-                    .forEach(o -> documentLocationDatabaseEntities.remove((int) o));
+                    .forEach(o -> result.remove((int) o));
         }
 
-        return documentLocationDatabaseEntities;
+        return result;
     }
 }

@@ -1,7 +1,6 @@
 package com.github.collector.repository.document;
 
 import com.github.collector.repository.document.domain.DocumentDatabaseEntity;
-import com.github.collector.repository.location.domain.DocumentLocationDatabaseEntity;
 import com.mongodb.MongoBulkWriteException;
 import com.mongodb.bulk.BulkWriteError;
 import com.mongodb.client.MongoCollection;
@@ -9,6 +8,7 @@ import com.mongodb.client.model.InsertManyOptions;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -20,6 +20,7 @@ public class DocumentRepository {
 
     public List<DocumentDatabaseEntity> insertDocuments(
             final List<DocumentDatabaseEntity> documentDatabaseEntities) {
+        final List<DocumentDatabaseEntity> result = new ArrayList<>(documentDatabaseEntities);
 
         try {
             documentDatabaseEntityMongoCollection.insertMany(documentDatabaseEntities,
@@ -28,9 +29,9 @@ public class DocumentRepository {
             mongoBulkWriteException.getWriteErrors().stream()
                     .map(BulkWriteError::getIndex)
                     .sorted(Comparator.<Integer>naturalOrder().reversed())
-                    .forEach(o -> documentDatabaseEntities.remove((int) o));
+                    .forEach(o -> result.remove((int) o));
         }
 
-        return documentDatabaseEntities;
+        return result;
     }
 }
