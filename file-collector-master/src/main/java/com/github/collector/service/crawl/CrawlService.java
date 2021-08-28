@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import com.github.collector.service.work.domain.WorkUnit;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -22,7 +21,7 @@ public class CrawlService {
         final List<WorkUnit> workUnits = warcLocationFactory.buildLocationStringStream(crawlId)
                 .map(location -> WorkUnit.builder()
                         .id(UUID.randomUUID())
-                        .location(location.toLowerCase(Locale.ROOT))
+                        .location(location)
                         .status(WorkUnitStatus.CREATED)
                         .build()
                 )
