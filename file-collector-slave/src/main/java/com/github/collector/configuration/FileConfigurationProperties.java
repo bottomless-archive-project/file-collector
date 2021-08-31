@@ -12,4 +12,5 @@ import java.util.List;
 public class FileConfigurationProperties {
 
     private List<String> types;
+    private String resultFolder;
 }

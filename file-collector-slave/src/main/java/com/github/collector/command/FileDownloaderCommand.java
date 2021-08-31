@@ -6,21 +6,33 @@ import com.github.bottomlessarchive.warc.service.content.response.domain.Respons
 import com.github.bottomlessarchive.warc.service.record.domain.WarcRecordType;
 import com.github.collector.configuration.FileConfigurationProperties;
 import com.github.collector.configuration.MasterServerConfigurationProperties;
-import com.github.collector.service.FileDownloader;
-import com.github.collector.service.FileLocationParser;
-import com.github.collector.service.FileValidator;
-import com.github.collector.service.ParsingContextFactory;
+import com.github.collector.service.*;
+import com.github.collector.service.domain.DeduplicationResult;
 import com.github.collector.service.work.domain.WorkUnit;
+import com.github.collector.view.document.request.DocumentDeduplicationRequest;
+import com.github.collector.view.document.response.DocumentDeduplicationResponse;
+import com.github.collector.view.location.request.DeduplicateDocumentLocationRequest;
+import com.github.collector.view.location.response.DeduplicateDocumentLocationResponse;
 import com.github.collector.view.work.response.StartWorkUnitResponse;
+import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
+import java.time.Duration;
+import java.util.*;
+
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 @Component
 @RequiredArgsConstructor
@@ -32,14 +44,21 @@ public class FileDownloaderCommand implements CommandLineRunner {
     private final FileDownloader fileDownloader;
     private final FileValidator fileValidator;
     private final FileConfigurationProperties fileCollectorProperties;
+    private final Sha256ChecksumProvider sha256ChecksumProvider;
     private final MasterServerConfigurationProperties masterServerConfigurationProperties;
+
+    private final HttpClient client = HttpClient.newBuilder()
+            .version(Version.HTTP_1_1)
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .connectTimeout(Duration.ofSeconds(20))
+            .build();
 
     @Override
     public void run(String... args) throws IOException, InterruptedException {
         while (true) {
             final Optional<WorkUnit> workUnit = loadNextWorkUnit();
 
-            if(workUnit.isEmpty()) {
+            if (workUnit.isEmpty()) {
                 Thread.sleep(600000);
 
                 continue;
@@ -52,21 +71,11 @@ public class FileDownloaderCommand implements CommandLineRunner {
                     .filter(this::isExpectedFileType)
                     .toList();
 
-            // TODO: Partition it to the batches of 1000
-            // TODO: Send locations for deduplication
-
-            // TODO: Download only the non-duplicates
-            final List<Path> results = urlsToCrawl.stream()
-                    .flatMap(fileLocation -> fileDownloader.downloadFile(fileLocation)
-                            .filter(fileValidator::validateFile).stream())
-                    .toList();
-
-            // TODO: Create the hashes for the downloaded files
-            // TODO: Delete the duplicates, move the new files to the disc
-
-            results.size();
-
-            break;
+            Lists.partition(urlsToCrawl, 2000).stream()
+                    .map(this::deduplicateUrls)
+                    .map(this::downloadUrls)
+                    .map(this::deduplicateFiles)
+                    .forEach(this::finalizeResult);
         }
     }
 
@@ -89,5 +98,103 @@ public class FileDownloaderCommand implements CommandLineRunner {
     private boolean isExpectedFileType(final String fileLocation) {
         return fileCollectorProperties.getTypes().stream()
                 .anyMatch(fileLocation::endsWith);
+    }
+
+    private List<String> deduplicateUrls(final List<String> urls) {
+        try {
+            final URI deduplicateDocumentLocations = new URI(masterServerConfigurationProperties.getMasterLocation()
+                    + "/document-location");
+
+            final String requestBody = objectMapper.writeValueAsString(
+                    DeduplicateDocumentLocationRequest.builder()
+                            .locations(urls)
+                            .build()
+            );
+
+            final HttpRequest request = HttpRequest.newBuilder()
+                    .uri(deduplicateDocumentLocations)
+                    .timeout(Duration.of(10, SECONDS))
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+
+            final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            final DeduplicateDocumentLocationResponse deduplicateDocumentLocationResponse =
+                    objectMapper.readValue(response.body(), DeduplicateDocumentLocationResponse.class);
+
+            return deduplicateDocumentLocationResponse.getLocations();
+        } catch (URISyntaxException | IOException | InterruptedException e) {
+            return Collections.emptyList();
+        }
+    }
+
+    private List<Path> downloadUrls(final List<String> urls) {
+        return urls.stream()
+                .flatMap(fileLocation -> fileDownloader.downloadFile(fileLocation).stream())
+                .filter(fileValidator::validateFile)
+                .toList();
+    }
+
+    private List<DeduplicationResult> deduplicateFiles(final List<Path> paths) {
+        try {
+            final Map<String, Path> hashPathMap = new HashMap<>();
+
+            for (Path path : paths) {
+                try {
+                    final String checksum = sha256ChecksumProvider.checksum(Files.readAllBytes(path));
+
+                    hashPathMap.put(checksum, path);
+                } catch (IOException e) {
+                    // TODO: We need to handle this
+                    e.printStackTrace();
+                }
+            }
+
+            final URI deduplicateDocumentLocations = new URI(masterServerConfigurationProperties.getMasterLocation()
+                    + "/document-location");
+
+            final String requestBody = objectMapper.writeValueAsString(
+                    DocumentDeduplicationRequest.builder()
+                            .hashes(new LinkedList<>(hashPathMap.keySet()))
+                            .build()
+            );
+
+            final HttpRequest request = HttpRequest.newBuilder()
+                    .uri(deduplicateDocumentLocations)
+                    .timeout(Duration.of(10, SECONDS))
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+
+            final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            final DocumentDeduplicationResponse documentDeduplicationResponse =
+                    objectMapper.readValue(response.body(), DocumentDeduplicationResponse.class);
+
+            hashPathMap.keySet().retainAll(documentDeduplicationResponse.getHashes());
+
+            return paths.stream()
+                    .map(path -> DeduplicationResult.builder()
+                            .duplicate(!hashPathMap.containsValue(path))
+                            .fileLocation(path)
+                            .build())
+                    .toList();
+        } catch (URISyntaxException | IOException | InterruptedException e) {
+            return Collections.emptyList();
+        }
+    }
+
+    private void finalizeResult(final List<DeduplicationResult> deduplicationResults) {
+        try {
+            for (DeduplicationResult deduplicationResult : deduplicationResults) {
+                if (deduplicationResult.isDuplicate()) {
+                    Files.delete(deduplicationResult.getFileLocation());
+                } else {
+                    Files.move(deduplicationResult.getFileLocation(), Path.of(fileCollectorProperties.getResultFolder()));
+                }
+            }
+        } catch (IOException e) {
+            // TODO:
+            e.printStackTrace();
+        }
     }
 }

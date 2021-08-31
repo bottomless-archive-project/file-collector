@@ -1,6 +1,8 @@
 dependencies {
     implementation project(':file-collector-common')
 
-    implementation group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
+    implementation group: 'org.jsoup', name: 'jsoup', version: '1.14.2'
+    implementation group: 'com.google.guava', name: 'guava', version: '30.1.1-jre'
+    implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
     implementation group: 'com.github.bottomless-archive-project', name: 'java-warc', version: '33244f39e9'
 }
