@@ -16,6 +16,7 @@ import com.github.collector.view.location.response.DeduplicateDocumentLocationRe
 import com.github.collector.view.work.response.StartWorkUnitResponse;
 import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -34,6 +35,7 @@ import java.util.*;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class FileDownloaderCommand implements CommandLineRunner {
@@ -79,20 +81,39 @@ public class FileDownloaderCommand implements CommandLineRunner {
         }
     }
 
-    private Optional<WorkUnit> loadNextWorkUnit() throws IOException {
-        final URL startWorkUnitLocation = new URL(masterServerConfigurationProperties.getMasterLocation()
-                + "/work-unit/start-work");
-        final StartWorkUnitResponse startWorkUnitResponse = objectMapper.readValue(
-                startWorkUnitLocation, StartWorkUnitResponse.class);
+    private Optional<WorkUnit> loadNextWorkUnit() {
+        log.info("Loading next work unit.");
 
-        // TODO: When no more tasks, return empty optional
+        try {
+            final URI startWorkUnitLocation = new URI(masterServerConfigurationProperties.getMasterLocation()
+                    + "/work-unit/start-work");
 
-        return Optional.of(
-                WorkUnit.builder()
-                        .id(startWorkUnitResponse.getId())
-                        .location(startWorkUnitResponse.getLocation())
-                        .build()
-        );
+            final HttpRequest request = HttpRequest.newBuilder()
+                    .uri(startWorkUnitLocation)
+                    .timeout(Duration.of(10, SECONDS))
+                    .POST(HttpRequest.BodyPublishers.noBody())
+                    .build();
+
+            final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            final StartWorkUnitResponse startWorkUnitResponse = objectMapper.readValue(
+                    response.body(), StartWorkUnitResponse.class);
+
+            // TODO: When no more tasks, return empty optional
+
+            final WorkUnit workUnit = WorkUnit.builder()
+                    .id(startWorkUnitResponse.getId())
+                    .location(startWorkUnitResponse.getLocation())
+                    .build();
+
+            log.info("Got work unit: {}.", workUnit);
+
+            return Optional.of(workUnit);
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            return Optional.empty();
+        }
     }
 
     private boolean isExpectedFileType(final String fileLocation) {
@@ -101,6 +122,8 @@ public class FileDownloaderCommand implements CommandLineRunner {
     }
 
     private List<String> deduplicateUrls(final List<String> urls) {
+        log.info("Deduplication {} urls.", urls.size());
+
         try {
             final URI deduplicateDocumentLocations = new URI(masterServerConfigurationProperties.getMasterLocation()
                     + "/document-location");
@@ -115,6 +138,8 @@ public class FileDownloaderCommand implements CommandLineRunner {
                     .uri(deduplicateDocumentLocations)
                     .timeout(Duration.of(10, SECONDS))
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .header("Accept","*/*")
+                    .header("Content-Type","application/json")
                     .build();
 
             final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -122,8 +147,12 @@ public class FileDownloaderCommand implements CommandLineRunner {
             final DeduplicateDocumentLocationResponse deduplicateDocumentLocationResponse =
                     objectMapper.readValue(response.body(), DeduplicateDocumentLocationResponse.class);
 
+            log.info("From the sent urls {} was unique.", deduplicateDocumentLocationResponse.getLocations());
+
             return deduplicateDocumentLocationResponse.getLocations();
         } catch (URISyntaxException | IOException | InterruptedException e) {
+            e.printStackTrace();
+
             return Collections.emptyList();
         }
     }

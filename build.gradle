@@ -44,7 +44,8 @@ allprojects {
     apply plugin: 'org.springframework.boot'
 
     dependencies {
-        implementation group: 'org.springframework.boot', name: 'spring-boot-starter-webflux'
+        implementation group: 'org.springframework.boot', name: 'spring-boot-starter'
+        implementation group: 'org.springframework.boot', name: 'spring-boot-starter-json'
 
         // Configuration
         compileOnly group: 'org.springframework.boot', name: 'spring-boot-configuration-processor'
@@ -54,12 +55,4 @@ allprojects {
         compileOnly('org.projectlombok:lombok')
         annotationProcessor('org.projectlombok:lombok')
     }
-}
-
-dependencies {
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-reactor-netty'
-
-    implementation group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
-    implementation group: 'com.github.davidmoten', name: 'io-extras', version: '0.1'
-    implementation group: 'com.github.bottomless-archive-project', name: 'java-warc', version: '33244f39e9'
 }
