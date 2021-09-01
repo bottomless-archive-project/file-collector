@@ -11,4 +11,5 @@ public class DeduplicationResult {
 
     boolean duplicate;
     Path fileLocation;
+    String hash;
 }

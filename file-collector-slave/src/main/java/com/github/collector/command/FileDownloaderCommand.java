@@ -76,7 +76,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
             log.info("Found {} urls in the work unit.", urlsToCrawl.size());
 
-            Lists.partition(new LinkedList<>(urlsToCrawl), 2000).stream()
+            Lists.partition(new LinkedList<>(urlsToCrawl), 100).stream()
                     .map(this::deduplicateUrls)
                     .map(this::downloadUrls)
                     .map(this::deduplicateFiles)
@@ -161,6 +161,8 @@ public class FileDownloaderCommand implements CommandLineRunner {
     }
 
     private List<Path> downloadUrls(final List<String> urls) {
+        log.info("Starting to download {} urls.", urls.size());
+
         return urls.stream()
                 .parallel()
                 .flatMap(fileLocation -> fileDownloader.downloadFile(fileLocation).stream())
@@ -170,13 +172,20 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
     private List<DeduplicationResult> deduplicateFiles(final List<Path> paths) {
         try {
+            log.info("Starting to deduplicate {} files.", paths.size());
+
             final Map<String, Path> hashPathMap = new HashMap<>();
 
             for (Path path : paths) {
                 try {
                     final String checksum = sha256ChecksumProvider.checksum(Files.readAllBytes(path));
 
-                    hashPathMap.put(checksum, path);
+                    if (hashPathMap.containsKey(checksum)) {
+                        // Was in the batch already as a duplicate
+                        Files.delete(path);
+                    } else {
+                        hashPathMap.put(checksum, path);
+                    }
                 } catch (IOException e) {
                     // TODO: We need to handle this
                     e.printStackTrace();
@@ -184,7 +193,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
             }
 
             final URI deduplicateDocumentLocations = new URI(masterServerConfigurationProperties.getMasterLocation()
-                    + "/document-location");
+                    + "/document");
 
             final String requestBody = objectMapper.writeValueAsString(
                     DocumentDeduplicationRequest.builder()
@@ -196,6 +205,8 @@ public class FileDownloaderCommand implements CommandLineRunner {
                     .uri(deduplicateDocumentLocations)
                     .timeout(Duration.of(10, SECONDS))
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .header("Accept", "*/*")
+                    .header("Content-Type", "application/json")
                     .build();
 
             final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -203,26 +214,35 @@ public class FileDownloaderCommand implements CommandLineRunner {
             final DocumentDeduplicationResponse documentDeduplicationResponse =
                     objectMapper.readValue(response.body(), DocumentDeduplicationResponse.class);
 
-            hashPathMap.keySet().retainAll(documentDeduplicationResponse.getHashes());
+            List<String> uniqueHashes = documentDeduplicationResponse.getHashes();
 
-            return paths.stream()
-                    .map(path -> DeduplicationResult.builder()
-                            .duplicate(!hashPathMap.containsValue(path))
-                            .fileLocation(path)
-                            .build())
+            return hashPathMap.keySet().stream()
+                    .map(hash -> DeduplicationResult.builder()
+                            .duplicate(!uniqueHashes.contains(hash))
+                            .fileLocation(hashPathMap.get(hash))
+                            .hash(hash)
+                            .build()
+                    )
                     .toList();
         } catch (URISyntaxException | IOException | InterruptedException e) {
+            e.printStackTrace();
+
             return Collections.emptyList();
         }
     }
 
     private void finalizeResult(final List<DeduplicationResult> deduplicationResults) {
+        log.info("Starting to finalize {} results.", deduplicationResults.size());
+
         try {
             for (DeduplicationResult deduplicationResult : deduplicationResults) {
                 if (deduplicationResult.isDuplicate()) {
                     Files.delete(deduplicationResult.getFileLocation());
                 } else {
-                    Files.move(deduplicationResult.getFileLocation(), Path.of(fileCollectorProperties.getResultFolder()));
+                    Files.move(deduplicationResult.getFileLocation(),
+                            Path.of(fileCollectorProperties.getResultFolder())
+                                    .resolve(deduplicationResult.getHash() + ".pdf")
+                    );
                 }
             }
         } catch (IOException e) {
