@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
@@ -66,14 +67,16 @@ public class FileDownloaderCommand implements CommandLineRunner {
                 continue;
             }
 
-            final List<String> urlsToCrawl = WarcRecordStreamFactory.<ResponseContentBlock>streamOf(
+            final Set<String> urlsToCrawl = WarcRecordStreamFactory.<ResponseContentBlock>streamOf(
                             new URL(workUnit.get().getLocation()), List.of(WarcRecordType.RESPONSE))
                     .map(parsingContextFactory::buildParsingContext)
                     .flatMap(parsingContext -> fileLocationParser.parseLocations(parsingContext).stream())
                     .filter(this::isExpectedFileType)
-                    .toList();
+                    .collect(Collectors.toSet());
 
-            Lists.partition(urlsToCrawl, 2000).stream()
+            log.info("Found {} urls in the work unit.", urlsToCrawl.size());
+
+            Lists.partition(new LinkedList<>(urlsToCrawl), 2000).stream()
                     .map(this::deduplicateUrls)
                     .map(this::downloadUrls)
                     .map(this::deduplicateFiles)
@@ -138,8 +141,8 @@ public class FileDownloaderCommand implements CommandLineRunner {
                     .uri(deduplicateDocumentLocations)
                     .timeout(Duration.of(10, SECONDS))
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                    .header("Accept","*/*")
-                    .header("Content-Type","application/json")
+                    .header("Accept", "*/*")
+                    .header("Content-Type", "application/json")
                     .build();
 
             final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -147,7 +150,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
             final DeduplicateDocumentLocationResponse deduplicateDocumentLocationResponse =
                     objectMapper.readValue(response.body(), DeduplicateDocumentLocationResponse.class);
 
-            log.info("From the sent urls {} was unique.", deduplicateDocumentLocationResponse.getLocations());
+            log.info("From the sent urls {} was unique.", deduplicateDocumentLocationResponse.getLocations().size());
 
             return deduplicateDocumentLocationResponse.getLocations();
         } catch (URISyntaxException | IOException | InterruptedException e) {
