@@ -162,6 +162,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
     private List<Path> downloadUrls(final List<String> urls) {
         return urls.stream()
+                .parallel()
                 .flatMap(fileLocation -> fileDownloader.downloadFile(fileLocation).stream())
                 .filter(fileValidator::validateFile)
                 .toList();

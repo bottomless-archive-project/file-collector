@@ -13,7 +13,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
@@ -22,17 +21,11 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 @RequiredArgsConstructor
 public class FileDownloader {
 
+    private final HttpClient httpClient;
     private final FileConfigurationProperties fileConfigurationProperties;
-    private final AtomicLong downloadedFileCounter = new AtomicLong();
-
-    private final HttpClient client = HttpClient.newBuilder()
-            .version(HttpClient.Version.HTTP_1_1)
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .connectTimeout(Duration.ofSeconds(20))
-            .build();
 
     public Optional<Path> downloadFile(final String fileLocation) {
-        log.info("Downloading file at {}.", fileLocation);
+        log.debug("Downloading file at {}.", fileLocation);
 
         final String id = UUID.randomUUID().toString();
         final String extension = fileConfigurationProperties.getTypes().stream()
@@ -46,12 +39,6 @@ public class FileDownloader {
     }
 
     private Optional<Path> acquireFile(final String downloadTarget, final Path resultLocation) {
-        final long downloadedFileCount = downloadedFileCounter.incrementAndGet();
-
-        if (downloadedFileCount % 100 == 0) {
-            log.info("Downloaded {} files!", downloadedFileCount);
-        }
-
         log.debug("Downloading file: " + downloadTarget);
 
         try {
@@ -61,8 +48,7 @@ public class FileDownloader {
                     .GET()
                     .build();
 
-
-            client.send(request, HttpResponse.BodyHandlers.ofFile(resultLocation));
+            httpClient.send(request, HttpResponse.BodyHandlers.ofFile(resultLocation));
 
             return Optional.of(resultLocation);
         } catch (final Exception e) {
