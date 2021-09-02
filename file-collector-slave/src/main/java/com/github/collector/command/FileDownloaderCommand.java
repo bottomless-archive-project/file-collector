@@ -217,12 +217,17 @@ public class FileDownloaderCommand implements CommandLineRunner {
             List<String> uniqueHashes = documentDeduplicationResponse.getHashes();
 
             return hashPathMap.keySet().stream()
-                    .map(hash -> DeduplicationResult.builder()
-                            .duplicate(!uniqueHashes.contains(hash))
-                            .fileLocation(hashPathMap.get(hash))
-                            .hash(hash)
-                            .build()
-                    )
+                    .map(hash -> {
+                        final Path fileLocation = hashPathMap.get(hash);
+                        final String[] dotSplit = fileLocation.getFileName().toString().split("\\.");
+
+                        return DeduplicationResult.builder()
+                                .duplicate(!uniqueHashes.contains(hash))
+                                .fileLocation(fileLocation)
+                                .hash(hash)
+                                .extension(dotSplit[dotSplit.length - 1])
+                                .build();
+                    })
                     .toList();
         } catch (URISyntaxException | IOException | InterruptedException e) {
             e.printStackTrace();
@@ -241,7 +246,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
                 } else {
                     Files.move(deduplicationResult.getFileLocation(),
                             Path.of(fileCollectorProperties.getResultFolder())
-                                    .resolve(deduplicationResult.getHash() + ".pdf")
+                                    .resolve(deduplicationResult.getHash() + "." + deduplicationResult.getExtension())
                     );
                 }
             }
