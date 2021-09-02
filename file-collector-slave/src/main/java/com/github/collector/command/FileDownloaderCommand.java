@@ -3,17 +3,18 @@ package com.github.collector.command;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.collector.configuration.FileConfigurationProperties;
 import com.github.collector.configuration.MasterServerConfigurationProperties;
-import com.github.collector.service.validator.FileValidator;
 import com.github.collector.service.Sha256ChecksumProvider;
 import com.github.collector.service.deduplication.SourceLocationDeduplicationClient;
 import com.github.collector.service.domain.DeduplicationResult;
 import com.github.collector.service.download.DownloadTargetConverter;
 import com.github.collector.service.download.SourceDownloader;
+import com.github.collector.service.validator.FileValidator;
 import com.github.collector.service.work.domain.WorkUnit;
+import com.github.collector.service.workunit.WorkUnitClient;
 import com.github.collector.service.workunit.WorkUnitParser;
+import com.github.collector.service.workunit.WorkUnitProvider;
 import com.github.collector.view.document.request.DocumentDeduplicationRequest;
 import com.github.collector.view.document.response.DocumentDeduplicationResponse;
-import com.github.collector.view.work.response.StartWorkUnitResponse;
 import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 @RequiredArgsConstructor
 public class FileDownloaderCommand implements CommandLineRunner {
 
+    private final WorkUnitClient workUnitClient;
     private final WorkUnitParser workUnitParser;
     private final ObjectMapper objectMapper;
     private final SourceDownloader sourceDownloader;
@@ -47,24 +49,15 @@ public class FileDownloaderCommand implements CommandLineRunner {
     private final DownloadTargetConverter downloadTargetConverter;
     private final SourceLocationDeduplicationClient sourceLocationDeduplicationClient;
     private final MasterServerConfigurationProperties masterServerConfigurationProperties;
+    private final WorkUnitProvider workUnitProvider;
     private final HttpClient client;
 
     @Override
     public void run(String... args) {
         while (true) {
-            final Optional<WorkUnit> workUnit = loadNextWorkUnit();
+            final WorkUnit workUnit = workUnitProvider.provideNextWorkUnit();
 
-            if (workUnit.isEmpty()) {
-                try {
-                    Thread.sleep(600000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-
-                continue;
-            }
-
-            final Set<String> urlsToCrawl = workUnitParser.parseSourceLocations(workUnit.get());
+            final Set<String> urlsToCrawl = workUnitParser.parseSourceLocations(workUnit);
 
             log.info("Found {} urls in the work unit.", urlsToCrawl.size());
 
@@ -75,41 +68,6 @@ public class FileDownloaderCommand implements CommandLineRunner {
                     .map(fileValidator::validateFiles)
                     .map(this::deduplicateFiles)
                     .forEach(this::finalizeResult);
-        }
-    }
-
-    private Optional<WorkUnit> loadNextWorkUnit() {
-        log.info("Loading next work unit.");
-
-        try {
-            final URI startWorkUnitLocation = new URI(masterServerConfigurationProperties.getMasterLocation()
-                    + "/work-unit/start-work");
-
-            final HttpRequest request = HttpRequest.newBuilder()
-                    .uri(startWorkUnitLocation)
-                    .timeout(Duration.of(10, SECONDS))
-                    .POST(HttpRequest.BodyPublishers.noBody())
-                    .build();
-
-            final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            final StartWorkUnitResponse startWorkUnitResponse = objectMapper.readValue(
-                    response.body(), StartWorkUnitResponse.class);
-
-            // TODO: When no more tasks, return empty optional
-
-            final WorkUnit workUnit = WorkUnit.builder()
-                    .id(startWorkUnitResponse.getId())
-                    .location(startWorkUnitResponse.getLocation())
-                    .build();
-
-            log.info("Got work unit: {}.", workUnit);
-
-            return Optional.of(workUnit);
-        } catch (Exception e) {
-            e.printStackTrace();
-
-            return Optional.empty();
         }
     }
 
