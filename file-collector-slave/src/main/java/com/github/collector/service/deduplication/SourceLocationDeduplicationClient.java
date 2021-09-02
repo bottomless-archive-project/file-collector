@@ -40,8 +40,6 @@ public class SourceLocationDeduplicationClient {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
 
-            log.error("Got interrupted while doing the source location deduplication! Continue processing.");
-
             return Collections.emptyList();
         } catch (IOException e) {
             //TODO: Add some retry logic!

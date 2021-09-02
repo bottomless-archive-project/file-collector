@@ -1,4 +1,4 @@
-package com.github.collector.service;
+package com.github.collector.service.workunit;
 
 import com.github.bottomlessarchive.warc.service.content.response.domain.ResponseContentBlock;
 import com.github.bottomlessarchive.warc.service.record.domain.WarcRecord;

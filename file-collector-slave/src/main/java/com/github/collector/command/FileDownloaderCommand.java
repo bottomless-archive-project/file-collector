@@ -1,24 +1,20 @@
 package com.github.collector.command;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.bottomlessarchive.warc.service.WarcRecordStreamFactory;
-import com.github.bottomlessarchive.warc.service.content.response.domain.ResponseContentBlock;
-import com.github.bottomlessarchive.warc.service.record.domain.WarcRecordType;
 import com.github.collector.configuration.FileConfigurationProperties;
 import com.github.collector.configuration.MasterServerConfigurationProperties;
-import com.github.collector.service.*;
+import com.github.collector.service.FileValidator;
+import com.github.collector.service.Sha256ChecksumProvider;
 import com.github.collector.service.deduplication.SourceLocationDeduplicationClient;
 import com.github.collector.service.domain.DeduplicationResult;
 import com.github.collector.service.domain.DownloadTarget;
 import com.github.collector.service.download.SourceDownloader;
 import com.github.collector.service.download.SourceLocationFactory;
 import com.github.collector.service.download.TargetLocationFactory;
-import com.github.collector.service.download.SourceLocationValidation;
 import com.github.collector.service.work.domain.WorkUnit;
+import com.github.collector.service.workunit.WorkUnitParser;
 import com.github.collector.view.document.request.DocumentDeduplicationRequest;
 import com.github.collector.view.document.response.DocumentDeduplicationResponse;
-import com.github.collector.view.location.request.DeduplicateDocumentLocationRequest;
-import com.github.collector.view.location.response.DeduplicateDocumentLocationResponse;
 import com.github.collector.view.work.response.StartWorkUnitResponse;
 import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +25,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -37,7 +32,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
@@ -46,10 +40,8 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 @RequiredArgsConstructor
 public class FileDownloaderCommand implements CommandLineRunner {
 
-    private final SourceLocationValidation fileLocationValidation;
+    private final WorkUnitParser workUnitParser;
     private final ObjectMapper objectMapper;
-    private final FileLocationParser fileLocationParser;
-    private final ParsingContextFactory parsingContextFactory;
     private final SourceDownloader sourceDownloader;
     private final FileValidator fileValidator;
     private final FileConfigurationProperties fileCollectorProperties;
@@ -61,22 +53,21 @@ public class FileDownloaderCommand implements CommandLineRunner {
     private final HttpClient client;
 
     @Override
-    public void run(String... args) throws IOException, InterruptedException {
+    public void run(String... args) {
         while (true) {
             final Optional<WorkUnit> workUnit = loadNextWorkUnit();
 
             if (workUnit.isEmpty()) {
-                Thread.sleep(600000);
+                try {
+                    Thread.sleep(600000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
 
                 continue;
             }
 
-            final Set<String> urlsToCrawl = WarcRecordStreamFactory.<ResponseContentBlock>streamOf(
-                            new URL(workUnit.get().getLocation()), List.of(WarcRecordType.RESPONSE))
-                    .map(parsingContextFactory::buildParsingContext)
-                    .flatMap(parsingContext -> fileLocationParser.parseLocations(parsingContext).stream())
-                    .filter(fileLocationValidation::shouldCrawlSource)
-                    .collect(Collectors.toSet());
+            final Set<String> urlsToCrawl = workUnitParser.parseSourceLocations(workUnit.get());
 
             log.info("Found {} urls in the work unit.", urlsToCrawl.size());
 
