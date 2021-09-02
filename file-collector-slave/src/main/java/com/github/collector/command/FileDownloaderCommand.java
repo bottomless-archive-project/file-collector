@@ -3,14 +3,12 @@ package com.github.collector.command;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.collector.configuration.FileConfigurationProperties;
 import com.github.collector.configuration.MasterServerConfigurationProperties;
-import com.github.collector.service.FileValidator;
+import com.github.collector.service.validator.FileValidator;
 import com.github.collector.service.Sha256ChecksumProvider;
 import com.github.collector.service.deduplication.SourceLocationDeduplicationClient;
 import com.github.collector.service.domain.DeduplicationResult;
-import com.github.collector.service.domain.DownloadTarget;
+import com.github.collector.service.download.DownloadTargetConverter;
 import com.github.collector.service.download.SourceDownloader;
-import com.github.collector.service.download.SourceLocationFactory;
-import com.github.collector.service.download.TargetLocationFactory;
 import com.github.collector.service.work.domain.WorkUnit;
 import com.github.collector.service.workunit.WorkUnitParser;
 import com.github.collector.view.document.request.DocumentDeduplicationRequest;
@@ -46,8 +44,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
     private final FileValidator fileValidator;
     private final FileConfigurationProperties fileCollectorProperties;
     private final Sha256ChecksumProvider sha256ChecksumProvider;
-    private final SourceLocationFactory sourceLocationFactory;
-    private final TargetLocationFactory targetLocationFactory;
+    private final DownloadTargetConverter downloadTargetConverter;
     private final SourceLocationDeduplicationClient sourceLocationDeduplicationClient;
     private final MasterServerConfigurationProperties masterServerConfigurationProperties;
     private final HttpClient client;
@@ -73,7 +70,9 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
             Lists.partition(new LinkedList<>(urlsToCrawl), 100).stream()
                     .map(sourceLocationDeduplicationClient::deduplicateSourceLocations)
-                    .map(this::downloadUrls)
+                    .map(downloadTargetConverter::convert)
+                    .map(sourceDownloader::downloadToFile)
+                    .map(fileValidator::validateFiles)
                     .map(this::deduplicateFiles)
                     .forEach(this::finalizeResult);
         }
@@ -112,30 +111,6 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
             return Optional.empty();
         }
-    }
-
-    private List<Path> downloadUrls(final List<String> urls) {
-        log.info("Starting to download {} urls.", urls.size());
-
-        return urls.stream()
-                .parallel()
-                .map(location ->
-                        sourceLocationFactory.newSourceLocation(location)
-                                .map(sourceLocation -> {
-                                    final Path targetLocation = targetLocationFactory.newTargetLocation(sourceLocation);
-
-                                    return DownloadTarget.builder()
-                                            .sourceLocation(sourceLocation)
-                                            .targetLocation(targetLocation)
-                                            .build();
-                                })
-                )
-                .flatMap(Optional::stream)
-                .map(downloadTarget -> sourceDownloader.downloadToFile(downloadTarget.getSourceLocation(),
-                        downloadTarget.getTargetLocation()))
-                .flatMap(Optional::stream)
-                .filter(fileValidator::validateFile)
-                .toList();
     }
 
     private List<DeduplicationResult> deduplicateFiles(final List<Path> paths) {
