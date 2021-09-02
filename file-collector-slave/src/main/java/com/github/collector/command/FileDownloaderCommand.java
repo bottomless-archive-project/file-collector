@@ -8,6 +8,10 @@ import com.github.collector.configuration.FileConfigurationProperties;
 import com.github.collector.configuration.MasterServerConfigurationProperties;
 import com.github.collector.service.*;
 import com.github.collector.service.domain.DeduplicationResult;
+import com.github.collector.service.domain.DownloadTarget;
+import com.github.collector.service.download.FileDownloader;
+import com.github.collector.service.download.SourceLocationFactory;
+import com.github.collector.service.download.TargetLocationFactory;
 import com.github.collector.service.work.domain.WorkUnit;
 import com.github.collector.view.document.request.DocumentDeduplicationRequest;
 import com.github.collector.view.document.response.DocumentDeduplicationResponse;
@@ -21,6 +25,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -48,6 +53,8 @@ public class FileDownloaderCommand implements CommandLineRunner {
     private final FileValidator fileValidator;
     private final FileConfigurationProperties fileCollectorProperties;
     private final Sha256ChecksumProvider sha256ChecksumProvider;
+    private final SourceLocationFactory sourceLocationFactory;
+    private final TargetLocationFactory targetLocationFactory;
     private final MasterServerConfigurationProperties masterServerConfigurationProperties;
 
     private final HttpClient client = HttpClient.newBuilder()
@@ -165,7 +172,21 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
         return urls.stream()
                 .parallel()
-                .flatMap(fileLocation -> fileDownloader.downloadFile(fileLocation).stream())
+                .map(location ->
+                        sourceLocationFactory.newSourceLocation(location)
+                                .map(sourceLocation -> {
+                                    final Path targetLocation = targetLocationFactory.newTargetLocation(sourceLocation);
+
+                                    return DownloadTarget.builder()
+                                            .sourceLocation(sourceLocation)
+                                            .targetLocation(targetLocation)
+                                            .build();
+                                })
+                )
+                .flatMap(Optional::stream)
+                .map(downloadTarget -> fileDownloader.downloadToFile(downloadTarget.getSourceLocation(),
+                        downloadTarget.getTargetLocation()))
+                .flatMap(Optional::stream)
                 .filter(fileValidator::validateFile)
                 .toList();
     }
