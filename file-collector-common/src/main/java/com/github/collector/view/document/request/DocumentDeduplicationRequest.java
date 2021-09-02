@@ -4,12 +4,12 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 
-import java.util.List;
+import java.util.Set;
 
 @Value
 @Builder
 @Jacksonized
 public class DocumentDeduplicationRequest {
 
-    List<String> hashes;
+    Set<String> hashes;
 }
