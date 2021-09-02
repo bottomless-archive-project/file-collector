@@ -16,6 +16,9 @@ import java.util.Optional;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
+/**
+ * Downloads files from the internet.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -23,6 +26,13 @@ public class FileDownloader {
 
     private final HttpClient httpClient;
 
+    /**
+     * Download a file from the provided source location to the provided target location.
+     *
+     * @param sourceLocation the location to download the file from
+     * @param targetLocation the location to save the file to
+     * @return an empty optional if the download failed, the target location wrapped into an optional otherwise
+     */
     public Optional<Path> downloadToFile(final URL sourceLocation, Path targetLocation) {
         log.debug("Downloading file at {}.", sourceLocation);
 
