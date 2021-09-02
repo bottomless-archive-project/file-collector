@@ -22,7 +22,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class FileDownloader {
+public class SourceDownloader {
 
     private final HttpClient httpClient;
 

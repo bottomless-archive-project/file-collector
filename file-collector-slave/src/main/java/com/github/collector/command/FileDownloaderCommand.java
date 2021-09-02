@@ -7,11 +7,13 @@ import com.github.bottomlessarchive.warc.service.record.domain.WarcRecordType;
 import com.github.collector.configuration.FileConfigurationProperties;
 import com.github.collector.configuration.MasterServerConfigurationProperties;
 import com.github.collector.service.*;
+import com.github.collector.service.deduplication.SourceLocationDeduplicationClient;
 import com.github.collector.service.domain.DeduplicationResult;
 import com.github.collector.service.domain.DownloadTarget;
-import com.github.collector.service.download.FileDownloader;
+import com.github.collector.service.download.SourceDownloader;
 import com.github.collector.service.download.SourceLocationFactory;
 import com.github.collector.service.download.TargetLocationFactory;
+import com.github.collector.service.download.SourceLocationValidation;
 import com.github.collector.service.work.domain.WorkUnit;
 import com.github.collector.view.document.request.DocumentDeduplicationRequest;
 import com.github.collector.view.document.response.DocumentDeduplicationResponse;
@@ -25,12 +27,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpClient;
-import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
@@ -46,22 +46,19 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 @RequiredArgsConstructor
 public class FileDownloaderCommand implements CommandLineRunner {
 
+    private final SourceLocationValidation fileLocationValidation;
     private final ObjectMapper objectMapper;
     private final FileLocationParser fileLocationParser;
     private final ParsingContextFactory parsingContextFactory;
-    private final FileDownloader fileDownloader;
+    private final SourceDownloader sourceDownloader;
     private final FileValidator fileValidator;
     private final FileConfigurationProperties fileCollectorProperties;
     private final Sha256ChecksumProvider sha256ChecksumProvider;
     private final SourceLocationFactory sourceLocationFactory;
     private final TargetLocationFactory targetLocationFactory;
+    private final SourceLocationDeduplicationClient sourceLocationDeduplicationClient;
     private final MasterServerConfigurationProperties masterServerConfigurationProperties;
-
-    private final HttpClient client = HttpClient.newBuilder()
-            .version(Version.HTTP_1_1)
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .connectTimeout(Duration.ofSeconds(20))
-            .build();
+    private final HttpClient client;
 
     @Override
     public void run(String... args) throws IOException, InterruptedException {
@@ -78,13 +75,13 @@ public class FileDownloaderCommand implements CommandLineRunner {
                             new URL(workUnit.get().getLocation()), List.of(WarcRecordType.RESPONSE))
                     .map(parsingContextFactory::buildParsingContext)
                     .flatMap(parsingContext -> fileLocationParser.parseLocations(parsingContext).stream())
-                    .filter(this::isExpectedFileType)
+                    .filter(fileLocationValidation::shouldCrawlSource)
                     .collect(Collectors.toSet());
 
             log.info("Found {} urls in the work unit.", urlsToCrawl.size());
 
             Lists.partition(new LinkedList<>(urlsToCrawl), 100).stream()
-                    .map(this::deduplicateUrls)
+                    .map(sourceLocationDeduplicationClient::deduplicateSourceLocations)
                     .map(this::downloadUrls)
                     .map(this::deduplicateFiles)
                     .forEach(this::finalizeResult);
@@ -126,47 +123,6 @@ public class FileDownloaderCommand implements CommandLineRunner {
         }
     }
 
-    private boolean isExpectedFileType(final String fileLocation) {
-        return fileCollectorProperties.getTypes().stream()
-                .anyMatch(fileLocation::endsWith);
-    }
-
-    private List<String> deduplicateUrls(final List<String> urls) {
-        log.info("Deduplication {} urls.", urls.size());
-
-        try {
-            final URI deduplicateDocumentLocations = new URI(masterServerConfigurationProperties.getMasterLocation()
-                    + "/document-location");
-
-            final String requestBody = objectMapper.writeValueAsString(
-                    DeduplicateDocumentLocationRequest.builder()
-                            .locations(urls)
-                            .build()
-            );
-
-            final HttpRequest request = HttpRequest.newBuilder()
-                    .uri(deduplicateDocumentLocations)
-                    .timeout(Duration.of(10, SECONDS))
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                    .header("Accept", "*/*")
-                    .header("Content-Type", "application/json")
-                    .build();
-
-            final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            final DeduplicateDocumentLocationResponse deduplicateDocumentLocationResponse =
-                    objectMapper.readValue(response.body(), DeduplicateDocumentLocationResponse.class);
-
-            log.info("From the sent urls {} was unique.", deduplicateDocumentLocationResponse.getLocations().size());
-
-            return deduplicateDocumentLocationResponse.getLocations();
-        } catch (URISyntaxException | IOException | InterruptedException e) {
-            e.printStackTrace();
-
-            return Collections.emptyList();
-        }
-    }
-
     private List<Path> downloadUrls(final List<String> urls) {
         log.info("Starting to download {} urls.", urls.size());
 
@@ -184,7 +140,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
                                 })
                 )
                 .flatMap(Optional::stream)
-                .map(downloadTarget -> fileDownloader.downloadToFile(downloadTarget.getSourceLocation(),
+                .map(downloadTarget -> sourceDownloader.downloadToFile(downloadTarget.getSourceLocation(),
                         downloadTarget.getTargetLocation()))
                 .flatMap(Optional::stream)
                 .filter(fileValidator::validateFile)
