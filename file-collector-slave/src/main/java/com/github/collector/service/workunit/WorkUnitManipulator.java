@@ -10,17 +10,17 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class WorkUnitProvider {
+public class WorkUnitManipulator {
 
     private final WorkUnitClient workUnitClient;
 
-    public WorkUnit provideNextWorkUnit() {
+    public WorkUnit startWorkUnit() {
         Optional<WorkUnit> workUnit;
 
         do {
             log.info("Loading next work unit.");
 
-            workUnit = workUnitClient.getNextWorkUnit();
+            workUnit = workUnitClient.startWorkUnit();
 
             if (workUnit.isEmpty()) {
                 log.info("No work unit found. Retrying in 60 seconds.");
@@ -34,5 +34,9 @@ public class WorkUnitProvider {
         } while (workUnit.isEmpty());
 
         return workUnit.get();
+    }
+
+    public void closeWorkUnit(final WorkUnit workUnit) {
+        workUnitClient.closeWorkUnit(workUnit);
     }
 }

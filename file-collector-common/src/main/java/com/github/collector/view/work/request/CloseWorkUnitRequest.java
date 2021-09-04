@@ -7,7 +7,7 @@ import lombok.extern.jackson.Jacksonized;
 @Value
 @Builder
 @Jacksonized
-public class FinishWorkUnitRequest {
+public class CloseWorkUnitRequest {
 
     String workUnitId;
 }
