@@ -1,34 +1,28 @@
 package com.github.collector.service.download;
 
 import com.github.collector.configuration.FileConfigurationProperties;
+import com.github.collector.service.domain.SourceLocation;
+import com.github.collector.service.domain.TargetLocation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.UUID;
 
-/**
- * Creates a location on a local resource (disc, network drive, etc.) where the downloaded file can be written.
- */
 @Service
 @RequiredArgsConstructor
 public class TargetLocationFactory {
 
     private final FileConfigurationProperties fileConfigurationProperties;
 
-    /**
-     * Returns a location on a local resource (disc, network drive, etc.) where the downloaded file can be written.
-     * The returned location is unique for every source location.
-     */
-    public Path newTargetLocation(final URL sourceLocation) {
+    public TargetLocation newTargetLocation(final SourceLocation sourceLocation) {
         final String id = UUID.randomUUID().toString();
 
-        final String extension = fileConfigurationProperties.getTypes().stream()
-                .filter(suffix -> sourceLocation.getPath().endsWith(suffix))
-                .findFirst()
-                .orElse("");
+        final Path path = Path.of(fileConfigurationProperties.getStageFolder())
+                .resolve(id + "." + sourceLocation.getExtension());
 
-        return Path.of(fileConfigurationProperties.getStageFolder() + "/" + id + "." + extension);
+        return TargetLocation.builder()
+                .path(path)
+                .build();
     }
 }

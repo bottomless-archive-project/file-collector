@@ -1,21 +1,23 @@
 package com.github.collector.service.validator;
 
+import com.github.collector.service.domain.DownloadTarget;
+import com.github.collector.service.domain.TargetLocation;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 @Service
 public class FileValidator {
 
-    public Mono<Path> validateFiles(final Path downloadedFile) {
+    public Mono<DownloadTarget> validateFiles(final DownloadTarget downloadTarget) {
         //TODO: add extension based validation
 
+        final TargetLocation targetLocation = downloadTarget.getTargetLocation();
+
         try {
-            if (Files.exists(downloadedFile) && Files.size(downloadedFile) == 0) {
-                Files.delete(downloadedFile);
+            if (targetLocation.exists() && !targetLocation.hasContent()) {
+                targetLocation.delete();
 
                 return Mono.empty();
             }
@@ -23,6 +25,6 @@ public class FileValidator {
             return Mono.empty();
         }
 
-        return Mono.just(downloadedFile);
+        return Mono.just(downloadTarget);
     }
 }

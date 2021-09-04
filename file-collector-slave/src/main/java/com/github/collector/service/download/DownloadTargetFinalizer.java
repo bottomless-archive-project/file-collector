@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Slf4j
@@ -20,9 +19,9 @@ public class DownloadTargetFinalizer {
     public void finalizeDownloadTargets(final DeduplicationResult deduplicationResult) {
         try {
             if (deduplicationResult.isDuplicate()) {
-                Files.delete(deduplicationResult.getFileLocation());
+                deduplicationResult.getFileLocation().delete();
             } else {
-                Files.move(deduplicationResult.getFileLocation(),
+                deduplicationResult.getFileLocation().move(
                         Path.of(fileConfigurationProperties.getResultFolder())
                                 .resolve(deduplicationResult.getHash() + "." + deduplicationResult.getExtension())
                 );

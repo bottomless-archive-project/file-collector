@@ -14,9 +14,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.time.Duration;
 
 @Slf4j
@@ -26,13 +26,19 @@ public class SourceDownloader {
 
     private final WebClient downloaderWebClient;
 
-    public Mono<Path> downloadToFile(final DownloadTarget downloadTarget) {
+    public Mono<DownloadTarget> downloadToFile(final DownloadTarget downloadTarget) {
         try {
             final Flux<DataBuffer> dataBufferFlux = newDownloadRequest(downloadTarget.getSourceLocation().toURI());
 
-            return DataBufferUtils.write(dataBufferFlux, downloadTarget.getTargetLocation())
-                    .doOnError(error -> downloadTarget.getTargetLocation().toFile().delete())
-                    .thenReturn(downloadTarget.getTargetLocation())
+            return DataBufferUtils.write(dataBufferFlux, downloadTarget.getTargetLocation().getPath())
+                    .doOnError(error -> {
+                        try {
+                            downloadTarget.getTargetLocation().delete();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    })
+                    .then(Mono.just(downloadTarget))
                     .onErrorResume(error -> {
                         if (log.isDebugEnabled()) {
                             log.debug("Error downloading a document: {}!", error.getMessage());

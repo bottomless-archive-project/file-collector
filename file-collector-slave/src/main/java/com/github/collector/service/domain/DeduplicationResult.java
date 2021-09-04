@@ -10,7 +10,7 @@ import java.nio.file.Path;
 public class DeduplicationResult {
 
     boolean duplicate;
-    Path fileLocation;
+    TargetLocation fileLocation;
     String hash;
     String extension;
 }
