@@ -8,20 +8,16 @@ import com.github.collector.service.download.DownloadTargetFinalizer;
 import com.github.collector.service.download.SourceDownloader;
 import com.github.collector.service.validator.FileValidator;
 import com.github.collector.service.work.domain.WorkUnit;
-import com.github.collector.service.workunit.WorkUnitParser;
 import com.github.collector.service.workunit.WorkUnitManipulator;
-import com.google.common.collect.Lists;
+import com.github.collector.service.workunit.WorkUnitParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SynchronousSink;
 
-import java.util.LinkedList;
-import java.util.Set;
 import java.util.function.Consumer;
 
 @Slf4j
