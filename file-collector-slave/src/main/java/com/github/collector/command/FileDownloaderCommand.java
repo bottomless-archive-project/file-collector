@@ -15,9 +15,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.SynchronousSink;
 
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.function.Consumer;
 
 @Slf4j
 @Component
@@ -36,23 +41,25 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        while (true) {
-            final WorkUnit workUnit = workUnitManipulator.startWorkUnit();
+        Flux.generate((Consumer<SynchronousSink<WorkUnit>>) synchronousSink -> {
+                    final WorkUnit workUnit = workUnitManipulator.startWorkUnit();
 
-            final Set<String> urlsToCrawl = workUnitParser.parseSourceLocations(workUnit);
-
-            log.info("Found {} urls in the work unit.", urlsToCrawl.size());
-
-            Lists.partition(new LinkedList<>(urlsToCrawl), 100).stream()
-                    .map(sourceLocationDeduplicationClient::deduplicateSourceLocations)
-                    .map(downloadTargetConverter::convert)
-                    .map(sourceDownloader::downloadToFile)
-                    .map(fileValidator::validateFiles)
-                    .map(hashConverter::calculateHashes)
-                    .map(fileDeduplicator::deduplicateFiles)
-                    .forEach(downloadTargetFinalizer::finalizeDownloadTargets);
-
-            workUnitManipulator.closeWorkUnit(workUnit);
-        }
+                    synchronousSink.next(workUnit);
+                })
+                .flatMap(workUnit -> Mono.just(workUnit)
+                        .flatMapMany(workUnitParser::parseSourceLocations)
+                        .buffer(100)
+                        .flatMap(sourceLocationDeduplicationClient::deduplicateSourceLocations)
+                        .flatMap(downloadTargetConverter::convert)
+                        .flatMap(sourceDownloader::downloadToFile)
+                        .flatMap(fileValidator::validateFiles)
+                        .buffer(100)
+                        .map(hashConverter::calculateHashes)
+                        .flatMap(fileDeduplicator::deduplicateFiles)
+                        .doOnNext(downloadTargetFinalizer::finalizeDownloadTargets)
+                        .then(Mono.just(workUnit))
+                )
+                .doOnNext(workUnitManipulator::closeWorkUnit)
+                .subscribe();
     }
 }

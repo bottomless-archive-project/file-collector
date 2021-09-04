@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -13,7 +14,7 @@ public class DocumentService {
 
     private final DocumentRepository documentRepository;
 
-    public List<String> deduplicateDocuments(final List<String> documentHashes) {
+    public List<String> deduplicateDocuments(final Set<String> documentHashes) {
         return documentRepository.insertDocuments(
                         documentHashes.stream()
                                 .map(documentHash -> {

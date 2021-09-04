@@ -1,35 +1,30 @@
 package com.github.collector.service.workunit;
 
-import com.github.bottomlessarchive.warc.service.WarcRecordStreamFactory;
-import com.github.bottomlessarchive.warc.service.content.response.domain.ResponseContentBlock;
-import com.github.bottomlessarchive.warc.service.record.domain.WarcRecordType;
 import com.github.collector.service.download.SourceLocationValidation;
+import com.github.collector.service.warc.WarcFluxFactory;
 import com.github.collector.service.work.domain.WorkUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class WorkUnitParser {
 
+    private final WarcFluxFactory warcFluxFactory;
     private final SourceLocationParser sourceLocationParser;
     private final ParsingContextFactory parsingContextFactory;
     private final SourceLocationValidation sourceLocationValidation;
 
-    public Set<String> parseSourceLocations(final WorkUnit workUnit) {
+    public Flux<String> parseSourceLocations(final WorkUnit workUnit) {
         try {
-            return WarcRecordStreamFactory.<ResponseContentBlock>streamOf(
-                            new URL(workUnit.getLocation()), List.of(WarcRecordType.RESPONSE))
+            return warcFluxFactory.buildWarcRecordFlux(new URL(workUnit.getLocation()))
                     .map(parsingContextFactory::buildParsingContext)
-                    .flatMap(parsingContext -> sourceLocationParser.parseLocations(parsingContext).stream())
-                    .filter(sourceLocationValidation::shouldCrawlSource)
-                    .collect(Collectors.toSet());
+                    .flatMap(sourceLocationParser::parseLocations)
+                    .filter(sourceLocationValidation::shouldCrawlSource);
         } catch (MalformedURLException e) {
             throw new IllegalStateException("Unable to parse work unit!", e);
         }

@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -18,19 +17,15 @@ public class DownloadTargetFinalizer {
 
     private final FileConfigurationProperties fileConfigurationProperties;
 
-    public void finalizeDownloadTargets(final List<DeduplicationResult> deduplicationResults) {
-        log.info("Starting to finalize {} results.", deduplicationResults.size());
-
+    public void finalizeDownloadTargets(final DeduplicationResult deduplicationResult) {
         try {
-            for (DeduplicationResult deduplicationResult : deduplicationResults) {
-                if (deduplicationResult.isDuplicate()) {
-                    Files.delete(deduplicationResult.getFileLocation());
-                } else {
-                    Files.move(deduplicationResult.getFileLocation(),
-                            Path.of(fileConfigurationProperties.getResultFolder())
-                                    .resolve(deduplicationResult.getHash() + "." + deduplicationResult.getExtension())
-                    );
-                }
+            if (deduplicationResult.isDuplicate()) {
+                Files.delete(deduplicationResult.getFileLocation());
+            } else {
+                Files.move(deduplicationResult.getFileLocation(),
+                        Path.of(fileConfigurationProperties.getResultFolder())
+                                .resolve(deduplicationResult.getHash() + "." + deduplicationResult.getExtension())
+                );
             }
         } catch (IOException e) {
             // TODO:

@@ -1,17 +1,16 @@
 package com.github.collector.service.deduplication;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.collector.configuration.MasterServerConfigurationProperties;
+import com.github.collector.view.location.request.DeduplicateDocumentLocationRequest;
 import com.github.collector.view.location.response.DeduplicateDocumentLocationResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 
-import java.io.IOException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.Collections;
+import java.net.URI;
 import java.util.List;
 
 @Slf4j
@@ -19,37 +18,28 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SourceLocationDeduplicationClient {
 
-    private final HttpClient httpClient;
-    private final ObjectMapper objectMapper;
-    private final SourceDeduplicationRequestFactory sourceDeduplicationRequestFactory;
+    private final WebClient webClient;
+    private final MasterServerConfigurationProperties masterServerConfigurationProperties;
 
-    public List<String> deduplicateSourceLocations(final List<String> sourceLocations) {
-        try {
-            log.info("Deduplication {} urls.", sourceLocations.size());
+    public Flux<String> deduplicateSourceLocations(final List<String> sourceLocations) {
+        log.info("Deduplicating {} urls.", sourceLocations.size());
 
-            final HttpRequest request = sourceDeduplicationRequestFactory.newSourceDeduplicationRequest(sourceLocations);
+        final DeduplicateDocumentLocationRequest deduplicateDocumentLocationRequest =
+                DeduplicateDocumentLocationRequest.builder()
+                        .locations(sourceLocations)
+                        .build();
 
-            final HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        return webClient.post()
+                .uri(URI.create(masterServerConfigurationProperties.getMasterLocation() + "/document-location"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(deduplicateDocumentLocationRequest)
+                .retrieve()
+                .bodyToFlux(DeduplicateDocumentLocationResponse.class)
+                .flatMap(deduplicateDocumentLocationResponse -> {
+                    log.info("From the sent urls {} only {} was unique.", sourceLocations.size(),
+                            deduplicateDocumentLocationResponse.getLocations().size());
 
-            final DeduplicateDocumentLocationResponse deduplicateDocumentLocationResponse =
-                    deserializeResponse(response);
-
-            log.info("From the sent urls {} was unique.", deduplicateDocumentLocationResponse.getLocations().size());
-
-            return deduplicateDocumentLocationResponse.getLocations();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-
-            return Collections.emptyList();
-        } catch (IOException e) {
-            //TODO: Add some retry logic!
-
-            throw new IllegalStateException("Failed to do the deduplication!", e);
-        }
-    }
-
-    private DeduplicateDocumentLocationResponse deserializeResponse(final HttpResponse<String> response)
-            throws JsonProcessingException {
-        return objectMapper.readValue(response.body(), DeduplicateDocumentLocationResponse.class);
+                    return Flux.fromIterable(deduplicateDocumentLocationRequest.getLocations());
+                });
     }
 }

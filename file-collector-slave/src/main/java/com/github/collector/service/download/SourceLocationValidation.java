@@ -4,19 +4,23 @@ import com.github.collector.configuration.FileConfigurationProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 
 @Service
 @RequiredArgsConstructor
 public class SourceLocationValidation {
 
-    private final SourceLocationFactory sourceLocationFactory;
     private final FileConfigurationProperties fileCollectorProperties;
 
     public boolean shouldCrawlSource(final String rawSourceLocation) {
-        return sourceLocationFactory.newSourceLocation(rawSourceLocation)
-                .map(this::hasTargetExtension)
-                .orElse(false);
+        try {
+            final URL sourceLocation = new URL(rawSourceLocation);
+
+            return hasTargetExtension(sourceLocation);
+        } catch (MalformedURLException e) {
+            return false;
+        }
     }
 
     private boolean hasTargetExtension(final URL sourceLocation) {
