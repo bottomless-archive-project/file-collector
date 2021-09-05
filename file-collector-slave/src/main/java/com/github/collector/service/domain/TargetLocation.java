@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -25,8 +26,8 @@ public class TargetLocation {
         Files.delete(path);
     }
 
-    public byte[] readAllBytes() throws IOException {
-        return Files.readAllBytes(path);
+    public InputStream inputStream() throws IOException {
+        return Files.newInputStream(path);
     }
 
     public void move(final Path target) throws IOException {

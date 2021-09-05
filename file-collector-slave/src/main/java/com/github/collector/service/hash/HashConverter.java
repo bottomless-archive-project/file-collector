@@ -1,8 +1,9 @@
-package com.github.collector.service;
+package com.github.collector.service.hash;
 
 import com.github.collector.service.domain.DownloadTarget;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -15,15 +16,12 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class HashConverter {
 
-    private final Sha256ChecksumProvider sha256ChecksumProvider;
-
-    public Map<String, DownloadTarget> calculateHashes(final List<DownloadTarget> downloadTargets) {
+    public Map<String, DownloadTarget> createHashesWithoutDuplicates(final List<DownloadTarget> downloadTargets) {
         final Map<String, DownloadTarget> hashPathMap = new HashMap<>();
 
         for (DownloadTarget downloadTarget : downloadTargets) {
             try {
-                final String checksum = sha256ChecksumProvider.checksum(
-                        downloadTarget.getTargetLocation().readAllBytes());
+                final String checksum = calculateChecksum(downloadTarget);
 
                 if (hashPathMap.containsKey(checksum)) {
                     // Was in the batch already as a duplicate
@@ -37,5 +35,9 @@ public class HashConverter {
         }
 
         return hashPathMap;
+    }
+
+    private String calculateChecksum(final DownloadTarget downloadTarget) throws IOException {
+        return DigestUtils.sha256Hex(downloadTarget.getTargetLocation().inputStream());
     }
 }

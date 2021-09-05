@@ -1,6 +1,5 @@
 package com.github.collector.command;
 
-import com.github.collector.service.HashConverter;
 import com.github.collector.service.deduplication.FileDeduplicator;
 import com.github.collector.service.deduplication.SourceLocationDeduplicationClient;
 import com.github.collector.service.download.DownloadTargetConverter;
@@ -25,7 +24,6 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class FileDownloaderCommand implements CommandLineRunner {
 
-    private final HashConverter hashConverter;
     private final WorkUnitParser workUnitParser;
     private final SourceDownloader sourceDownloader;
     private final DownloadTargetValidator downloadTargetValidator;
@@ -50,7 +48,6 @@ public class FileDownloaderCommand implements CommandLineRunner {
                         .flatMap(sourceDownloader::downloadToFile)
                         .flatMap(downloadTargetValidator::validateFiles)
                         .buffer(100)
-                        .map(hashConverter::calculateHashes)
                         .flatMap(fileDeduplicator::deduplicateFiles)
                         .doOnNext(downloadTargetFinalizer::finalizeDownloadTargets)
                         .then(Mono.just(workUnit))
