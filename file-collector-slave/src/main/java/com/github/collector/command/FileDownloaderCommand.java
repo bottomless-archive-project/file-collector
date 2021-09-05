@@ -6,7 +6,7 @@ import com.github.collector.service.deduplication.SourceLocationDeduplicationCli
 import com.github.collector.service.download.DownloadTargetConverter;
 import com.github.collector.service.download.DownloadTargetFinalizer;
 import com.github.collector.service.download.SourceDownloader;
-import com.github.collector.service.validator.FileValidator;
+import com.github.collector.service.validator.DownloadTargetValidator;
 import com.github.collector.service.work.domain.WorkUnit;
 import com.github.collector.service.workunit.WorkUnitManipulator;
 import com.github.collector.service.workunit.WorkUnitParser;
@@ -28,7 +28,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
     private final HashConverter hashConverter;
     private final WorkUnitParser workUnitParser;
     private final SourceDownloader sourceDownloader;
-    private final FileValidator fileValidator;
+    private final DownloadTargetValidator downloadTargetValidator;
     private final DownloadTargetConverter downloadTargetConverter;
     private final SourceLocationDeduplicationClient sourceLocationDeduplicationClient;
     private final WorkUnitManipulator workUnitManipulator;
@@ -48,7 +48,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
                         .flatMap(sourceLocationDeduplicationClient::deduplicateSourceLocations)
                         .flatMap(downloadTargetConverter::convert)
                         .flatMap(sourceDownloader::downloadToFile)
-                        .flatMap(fileValidator::validateFiles)
+                        .flatMap(downloadTargetValidator::validateFiles)
                         .buffer(100)
                         .map(hashConverter::calculateHashes)
                         .flatMap(fileDeduplicator::deduplicateFiles)
