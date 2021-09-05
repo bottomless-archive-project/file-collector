@@ -26,9 +26,8 @@ public class DownloadTargetFinalizer {
                                 .resolve(deduplicationResult.getHash() + "." + deduplicationResult.getExtension())
                 );
             }
-        } catch (IOException e) {
-            // TODO:
-            e.printStackTrace();
+        } catch (final IOException e) {
+            log.error("Failed to delete or move the download target!", e);
         }
     }
 }

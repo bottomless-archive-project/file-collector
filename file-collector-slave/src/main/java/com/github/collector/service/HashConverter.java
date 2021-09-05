@@ -2,6 +2,7 @@ package com.github.collector.service;
 
 import com.github.collector.service.domain.DownloadTarget;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -9,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class HashConverter {
@@ -29,9 +31,8 @@ public class HashConverter {
                 } else {
                     hashPathMap.put(checksum, downloadTarget);
                 }
-            } catch (IOException e) {
-                // TODO: We need to handle this
-                e.printStackTrace();
+            } catch (final IOException e) {
+                log.error("Failed to calculate hash!", e);
             }
         }
 
