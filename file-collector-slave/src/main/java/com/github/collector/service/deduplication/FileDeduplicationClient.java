@@ -35,7 +35,7 @@ public class FileDeduplicationClient {
                 .bodyValue(documentDeduplicationRequest)
                 .retrieve()
                 .bodyToFlux(DocumentDeduplicationResponse.class)
-                .retry()
+                //.retry()
                 .map(documentDeduplicationResponse -> {
                     log.info("From the sent {} file hashes {} was unique.", hashes.size(),
                             documentDeduplicationResponse.getHashes().size());
