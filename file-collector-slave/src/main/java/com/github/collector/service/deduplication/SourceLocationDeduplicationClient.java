@@ -35,6 +35,7 @@ public class SourceLocationDeduplicationClient {
                 .bodyValue(deduplicateDocumentLocationRequest)
                 .retrieve()
                 .bodyToFlux(DeduplicateDocumentLocationResponse.class)
+                .retry()
                 .flatMap(deduplicateDocumentLocationResponse -> {
                     log.info("From the sent urls {} only {} was unique.", sourceLocations.size(),
                             deduplicateDocumentLocationResponse.getLocations().size());
