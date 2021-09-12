@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.tcp.TcpClient;
 
 import java.net.URI;
 import java.time.Duration;
@@ -23,7 +24,7 @@ import java.util.Set;
 public class FileDeduplicationClient {
 
     private final WebClient webClient = WebClient.builder()
-            .clientConnector(new ReactorClientHttpConnector(HttpClient.newConnection().compress(true)))
+            .clientConnector(new ReactorClientHttpConnector(HttpClient.from(TcpClient.newConnection())))
             .build();
     private final MasterServerConfigurationProperties masterServerConfigurationProperties;
 
