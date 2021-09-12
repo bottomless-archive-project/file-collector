@@ -20,7 +20,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class FileDeduplicationClient {
 
-    private final WebClient webClient;
+    private final WebClient webClient = WebClient.builder().build();
     private final MasterServerConfigurationProperties masterServerConfigurationProperties;
 
     public Flux<List<String>> deduplicateFiles(final Set<String> hashes) {
@@ -37,7 +37,7 @@ public class FileDeduplicationClient {
                 .retrieve()
                 .bodyToFlux(DocumentDeduplicationResponse.class)
                 .timeout(Duration.ofSeconds(30))
-                .retry()
+                //.retry()
                 .map(documentDeduplicationResponse -> {
                     log.info("From the sent {} file hashes {} was unique.", hashes.size(),
                             documentDeduplicationResponse.getHashes().size());

@@ -19,7 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SourceLocationDeduplicationClient {
 
-    private final WebClient webClient;
+    private final WebClient webClient = WebClient.builder().build();
     private final MasterServerConfigurationProperties masterServerConfigurationProperties;
 
     public Flux<String> deduplicateSourceLocations(final List<String> sourceLocations) {
@@ -37,7 +37,7 @@ public class SourceLocationDeduplicationClient {
                 .retrieve()
                 .bodyToFlux(DeduplicateDocumentLocationResponse.class)
                 .timeout(Duration.ofSeconds(30))
-                .retry()
+                //.retry()
                 .flatMap(deduplicateDocumentLocationResponse -> {
                     log.info("From the sent urls {} only {} was unique.", sourceLocations.size(),
                             deduplicateDocumentLocationResponse.getLocations().size());
