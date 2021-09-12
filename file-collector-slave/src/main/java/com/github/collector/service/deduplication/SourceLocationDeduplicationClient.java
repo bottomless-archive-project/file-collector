@@ -11,6 +11,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 
 @Slf4j
@@ -35,7 +36,8 @@ public class SourceLocationDeduplicationClient {
                 .bodyValue(deduplicateDocumentLocationRequest)
                 .retrieve()
                 .bodyToFlux(DeduplicateDocumentLocationResponse.class)
-                //.retry()
+                .timeout(Duration.ofSeconds(30))
+                .retry()
                 .flatMap(deduplicateDocumentLocationResponse -> {
                     log.info("From the sent urls {} only {} was unique.", sourceLocations.size(),
                             deduplicateDocumentLocationResponse.getLocations().size());

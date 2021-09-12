@@ -11,6 +11,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 
@@ -35,7 +36,8 @@ public class FileDeduplicationClient {
                 .bodyValue(documentDeduplicationRequest)
                 .retrieve()
                 .bodyToFlux(DocumentDeduplicationResponse.class)
-                //.retry()
+                .timeout(Duration.ofSeconds(30))
+                .retry()
                 .map(documentDeduplicationResponse -> {
                     log.info("From the sent {} file hashes {} was unique.", hashes.size(),
                             documentDeduplicationResponse.getHashes().size());
