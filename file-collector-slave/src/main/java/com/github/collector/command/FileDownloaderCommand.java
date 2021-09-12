@@ -6,7 +6,7 @@ import com.github.collector.service.download.DownloadTargetConverter;
 import com.github.collector.service.download.DownloadTargetFinalizer;
 import com.github.collector.service.download.SourceDownloader;
 import com.github.collector.service.validator.DownloadTargetValidator;
-import com.github.collector.service.work.domain.WorkUnit;
+import com.github.collector.service.workunit.WorkUnitGenerator;
 import com.github.collector.service.workunit.WorkUnitManipulator;
 import com.github.collector.service.workunit.WorkUnitParser;
 import lombok.RequiredArgsConstructor;
@@ -15,15 +15,13 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.SynchronousSink;
-
-import java.util.function.Consumer;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class FileDownloaderCommand implements CommandLineRunner {
 
+    private final WorkUnitGenerator workUnitGenerator;
     private final WorkUnitParser workUnitParser;
     private final SourceDownloader sourceDownloader;
     private final DownloadTargetValidator downloadTargetValidator;
@@ -35,11 +33,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        Flux.generate((Consumer<SynchronousSink<WorkUnit>>) synchronousSink -> {
-                    final WorkUnit workUnit = workUnitManipulator.startWorkUnit();
-
-                    synchronousSink.next(workUnit);
-                })
+        Flux.generate(workUnitGenerator)
                 .flatMap(workUnit -> Mono.just(workUnit)
                         .flatMapMany(workUnitParser::parseSourceLocations)
                         .buffer(100)
