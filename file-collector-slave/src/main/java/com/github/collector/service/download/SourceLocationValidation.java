@@ -14,6 +14,10 @@ public class SourceLocationValidation {
     private final FileConfigurationProperties fileCollectorProperties;
 
     public boolean shouldCrawlSource(final String rawSourceLocation) {
+        if (rawSourceLocation.isEmpty()) {
+            return false;
+        }
+
         try {
             final URL sourceLocation = new URL(rawSourceLocation);
 

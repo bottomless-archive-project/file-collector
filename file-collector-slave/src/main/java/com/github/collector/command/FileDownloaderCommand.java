@@ -44,10 +44,11 @@ public class FileDownloaderCommand implements CommandLineRunner {
                         .buffer(100)
                         .flatMap(fileDeduplicator::deduplicateFiles)
                         .doOnNext(downloadTargetFinalizer::finalizeDownloadTargets)
+                        .doOnError(error -> log.error("Failed to catch an error on the work unit level!", error))
                         .then(Mono.just(workUnit))
                 )
                 .doOnNext(workUnitManipulator::closeWorkUnit)
-                .doOnError(error -> log.error("Failed to catch an error!", error))
+                .doOnError(error -> log.error("Failed to catch an error on the command level!", error))
                 .subscribe();
     }
 }
