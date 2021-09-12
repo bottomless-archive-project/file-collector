@@ -53,6 +53,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
                         .then(Mono.just(workUnit))
                 )
                 .doOnNext(workUnitManipulator::closeWorkUnit)
+                .doOnError(error -> log.error("Failed to catch an error!", error))
                 .subscribe();
     }
 }
