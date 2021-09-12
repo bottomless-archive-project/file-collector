@@ -6,9 +6,11 @@ import com.github.collector.view.document.response.DocumentDeduplicationResponse
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
+import reactor.netty.http.client.HttpClient;
 
 import java.net.URI;
 import java.time.Duration;
@@ -20,7 +22,9 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class FileDeduplicationClient {
 
-    private final WebClient webClient = WebClient.builder().build();
+    private final WebClient webClient = WebClient.builder()
+            .clientConnector(new ReactorClientHttpConnector(HttpClient.newConnection().compress(true)))
+            .build();
     private final MasterServerConfigurationProperties masterServerConfigurationProperties;
 
     public Flux<List<String>> deduplicateFiles(final Set<String> hashes) {

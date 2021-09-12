@@ -6,9 +6,11 @@ import com.github.collector.view.location.response.DeduplicateDocumentLocationRe
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
+import reactor.netty.http.client.HttpClient;
 
 import java.net.URI;
 import java.time.Duration;
@@ -19,7 +21,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SourceLocationDeduplicationClient {
 
-    private final WebClient webClient = WebClient.builder().build();
+    private final WebClient webClient = WebClient.builder()
+            .clientConnector(new ReactorClientHttpConnector(HttpClient.newConnection().compress(true)))
+            .build();
     private final MasterServerConfigurationProperties masterServerConfigurationProperties;
 
     public Flux<String> deduplicateSourceLocations(final List<String> sourceLocations) {
@@ -38,7 +42,7 @@ public class SourceLocationDeduplicationClient {
                 .bodyToFlux(DeduplicateDocumentLocationResponse.class)
                 .timeout(Duration.ofSeconds(30))
                 //.retry()
-                .concatMap(deduplicateDocumentLocationResponse -> {
+                .flatMap(deduplicateDocumentLocationResponse -> {
                     log.info("From the sent urls {} only {} was unique.", sourceLocations.size(),
                             deduplicateDocumentLocationResponse.getLocations().size());
 
