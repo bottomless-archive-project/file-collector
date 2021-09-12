@@ -38,7 +38,7 @@ public class SourceLocationDeduplicationClient {
                 .bodyToFlux(DeduplicateDocumentLocationResponse.class)
                 .timeout(Duration.ofSeconds(30))
                 //.retry()
-                .flatMap(deduplicateDocumentLocationResponse -> {
+                .concatMap(deduplicateDocumentLocationResponse -> {
                     log.info("From the sent urls {} only {} was unique.", sourceLocations.size(),
                             deduplicateDocumentLocationResponse.getLocations().size());
 
