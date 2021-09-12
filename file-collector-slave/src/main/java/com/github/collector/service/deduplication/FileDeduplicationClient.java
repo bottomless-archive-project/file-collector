@@ -1,20 +1,18 @@
 package com.github.collector.service.deduplication;
 
-import com.github.collector.configuration.MasterServerConfigurationProperties;
-import com.github.collector.view.document.request.DocumentDeduplicationRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.collector.view.document.response.DocumentDeduplicationResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
-import reactor.netty.http.client.HttpClient;
-import reactor.netty.tcp.TcpClient;
+import reactor.core.publisher.Mono;
 
-import java.net.URI;
-import java.time.Duration;
+import java.io.IOException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -23,31 +21,37 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class FileDeduplicationClient {
 
-    private final WebClient webClient = WebClient.builder()
-            .clientConnector(new ReactorClientHttpConnector(HttpClient.from(TcpClient.newConnection())))
-            .build();
-    private final MasterServerConfigurationProperties masterServerConfigurationProperties;
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
+    private final FileDeduplicationRequestFactory fileDeduplicationRequestFactory;
 
     public Flux<List<String>> deduplicateFiles(final Set<String> hashes) {
         log.info("Deduplicating {} files.", hashes.size());
 
-        final DocumentDeduplicationRequest documentDeduplicationRequest = DocumentDeduplicationRequest.builder()
-                .hashes(hashes)
-                .build();
+        return Mono.fromCallable(() -> {
+                    try {
+                        final HttpRequest request = fileDeduplicationRequestFactory.newFileDeduplicationRequest(hashes);
 
-        return webClient.post()
-                .uri(URI.create(masterServerConfigurationProperties.getMasterLocation() + "/document"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(documentDeduplicationRequest)
-                .retrieve()
-                .bodyToFlux(DocumentDeduplicationResponse.class)
-                .timeout(Duration.ofSeconds(30))
-                //.retry()
-                .map(documentDeduplicationResponse -> {
-                    log.info("From the sent {} file hashes {} was unique.", hashes.size(),
-                            documentDeduplicationResponse.getHashes().size());
+                        final HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-                    return documentDeduplicationResponse.getHashes();
+                        final DocumentDeduplicationResponse documentDeduplicationResponse =
+                                objectMapper.readValue(response.body(), DocumentDeduplicationResponse.class);
+
+                        return documentDeduplicationResponse.getHashes();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+
+                        return Collections.<String>emptyList();
+                    } catch (IOException e) {
+                        //TODO: Add some retry logic!
+
+                        throw new IllegalStateException("Failed to do the file deduplication!", e);
+                    }
+                })
+                .flatMapMany(result -> {
+                    log.info("From the sent {} file hashes {} was unique.", hashes.size(), result.size());
+
+                    return Flux.just(result);
                 });
     }
 }
