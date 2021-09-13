@@ -46,7 +46,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
                         .flatMap(downloadTargetValidator::validateFiles)
                         .buffer(100)
                         .flatMap(fileDeduplicator::deduplicateFiles)
-                        .doOnNext(downloadTargetFinalizer::finalizeDownloadTargets)
+                        .flatMap(downloadTargetFinalizer::finalizeDownloadTargets)
                         .doOnError(error -> log.error("Failed to catch an error on the work unit level!", error))
                         .then(Mono.just(workUnit))
                 )
