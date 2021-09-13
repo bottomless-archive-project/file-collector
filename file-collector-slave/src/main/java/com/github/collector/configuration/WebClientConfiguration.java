@@ -10,7 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.time.Duration;
 
 @Configuration
-public class HttpClientConfiguration {
+public class WebClientConfiguration {
 
     private static final int DOWNLOADER_CLIENT_TIMEOUT = 10;
 
