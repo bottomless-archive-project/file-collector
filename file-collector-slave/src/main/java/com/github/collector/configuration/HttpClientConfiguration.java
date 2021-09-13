@@ -7,7 +7,6 @@ import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.net.http.HttpClient;
 import java.time.Duration;
 
 @Configuration
@@ -16,11 +15,8 @@ public class HttpClientConfiguration {
     private static final int DOWNLOADER_CLIENT_TIMEOUT = 10;
 
     @Bean
-    public HttpClient httpClient() {
-        return HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_1_1)
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .connectTimeout(Duration.ofSeconds(20))
+    public WebClient masterWebClient() {
+        return WebClient.builder()
                 .build();
     }
 

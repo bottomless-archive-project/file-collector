@@ -1,17 +1,20 @@
 package com.github.collector.service.workunit;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.collector.configuration.MasterServerConfigurationProperties;
 import com.github.collector.service.work.domain.WorkUnit;
+import com.github.collector.view.work.request.CloseWorkUnitRequest;
 import com.github.collector.view.work.response.StartWorkUnitResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import java.io.IOException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.URI;
+import java.time.Duration;
 import java.util.Optional;
 
 @Slf4j
@@ -19,53 +22,56 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class WorkUnitClient {
 
-    private final HttpClient httpClient;
-    private final ObjectMapper objectMapper;
-    private final WorkUnitRequestFactory workUnitRequestFactory;
+    private final WebClient webClient;
+    private final MasterServerConfigurationProperties masterServerConfigurationProperties;
 
     public Optional<WorkUnit> startWorkUnit() {
-        try {
-            final HttpRequest request = workUnitRequestFactory.newStartWorkUnitRequest();
+        final URI startWorkUnitLocation = URI.create(masterServerConfigurationProperties.getMasterLocation()
+                + "/work-unit/start-work");
 
-            final HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        final ResponseEntity<StartWorkUnitResponse> startWorkUnitResponseResponseEntity = webClient.post()
+                .uri(startWorkUnitLocation)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(BodyInserters.empty())
+                .retrieve()
+                .toEntity(StartWorkUnitResponse.class)
+                .timeout(Duration.ofSeconds(30))
+                .block();
 
-            if (!hasNewWorkUnit(response)) {
-                return Optional.empty();
-            }
-
-            final StartWorkUnitResponse startWorkUnitResponse = objectMapper.readValue(
-                    response.body(), StartWorkUnitResponse.class);
-
-            return Optional.of(
-                    WorkUnit.builder()
-                            .id(startWorkUnitResponse.getId())
-                            .location(startWorkUnitResponse.getLocation())
-                            .build()
-            );
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-
-            return Optional.empty();
-        } catch (IOException e) {
-            log.error("Failed to get work unit!", e);
-
+        if (startWorkUnitResponseResponseEntity == null || startWorkUnitResponseResponseEntity.getStatusCode()
+                .equals(HttpStatus.NO_CONTENT)) {
             return Optional.empty();
         }
-    }
 
-    private boolean hasNewWorkUnit(final HttpResponse<String> response) {
-        return response.statusCode() != HttpStatus.NO_CONTENT.value();
+        final StartWorkUnitResponse startWorkUnitResponse = startWorkUnitResponseResponseEntity.getBody();
+
+        if (startWorkUnitResponse == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(
+                WorkUnit.builder()
+                        .id(startWorkUnitResponse.getId())
+                        .location(startWorkUnitResponse.getLocation())
+                        .build()
+        );
     }
 
     public void closeWorkUnit(final WorkUnit workUnit) {
-        try {
-            final HttpRequest request = workUnitRequestFactory.newCloseWorkUnitRequest(workUnit);
+        final URI endWorkUnitLocation = URI.create(masterServerConfigurationProperties.getMasterLocation()
+                + "/work-unit/close-work");
 
-            httpClient.send(request, HttpResponse.BodyHandlers.discarding());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (IOException e) {
-            log.error("Failed to close work unit!", e);
-        }
+        webClient.post()
+                .uri(endWorkUnitLocation)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(
+                        CloseWorkUnitRequest.builder()
+                                .workUnitId(workUnit.getLocation())
+                                .build()
+                )
+                .retrieve()
+                .toBodilessEntity()
+                .timeout(Duration.ofSeconds(30))
+                .block();
     }
 }

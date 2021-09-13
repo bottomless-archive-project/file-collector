@@ -4,6 +4,7 @@ import com.github.collector.service.domain.DownloadTarget;
 import com.github.collector.service.download.domain.RetryableException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpStatus;
@@ -24,7 +25,8 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class SourceDownloader {
 
-    private final WebClient downloaderWebClient;
+    @Qualifier("downloaderWebClient")
+    private final WebClient webClient;
 
     public Mono<DownloadTarget> downloadToFile(final DownloadTarget downloadTarget) {
         try {
@@ -54,7 +56,7 @@ public class SourceDownloader {
     }
 
     private Flux<DataBuffer> newDownloadRequest(final URI downloadTarget) {
-        return downloaderWebClient.get()
+        return webClient.get()
                 .uri(downloadTarget)
                 .exchangeToFlux(clientResponse -> handleExchange(downloadTarget, clientResponse))
                 .retryWhen(newRetry());
