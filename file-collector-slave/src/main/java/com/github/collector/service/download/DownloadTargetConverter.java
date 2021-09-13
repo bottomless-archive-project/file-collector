@@ -5,10 +5,8 @@ import com.github.collector.service.domain.SourceLocation;
 import com.github.collector.service.domain.TargetLocation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 
 @Service
 @RequiredArgsConstructor
@@ -16,27 +14,16 @@ public class DownloadTargetConverter {
 
     private final TargetLocationFactory targetLocationFactory;
 
-    public Mono<DownloadTarget> convert(final String rawSourceLocation) {
-        return buildSourceLocation(rawSourceLocation)
-                .map(sourceLocation -> {
-                    final TargetLocation targetLocation = targetLocationFactory.newTargetLocation(sourceLocation);
+    public DownloadTarget convert(final String rawSourceLocation) {
+        final SourceLocation sourceLocation = SourceLocation.builder()
+                .location(URI.create(rawSourceLocation))
+                .build();
 
-                    return DownloadTarget.builder()
-                            .sourceLocation(sourceLocation)
-                            .targetLocation(targetLocation)
-                            .build();
-                });
-    }
+        final TargetLocation targetLocation = targetLocationFactory.newTargetLocation(sourceLocation);
 
-    private Mono<SourceLocation> buildSourceLocation(final String rawSourceLocation) {
-        try {
-            return Mono.just(
-                    SourceLocation.builder()
-                            .location(new URL(rawSourceLocation))
-                            .build()
-            );
-        } catch (MalformedURLException e) {
-            return Mono.empty();
-        }
+        return DownloadTarget.builder()
+                .sourceLocation(sourceLocation)
+                .targetLocation(targetLocation)
+                .build();
     }
 }
