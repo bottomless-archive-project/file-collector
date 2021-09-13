@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 
 @Slf4j
@@ -33,6 +34,8 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        Hooks.onOperatorDebug();
+
         Flux.generate(workUnitGenerator)
                 .flatMap(workUnit -> Mono.just(workUnit)
                         .flatMapMany(workUnitParser::parseSourceLocations)
