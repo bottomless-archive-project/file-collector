@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.List;
 
 @Slf4j
@@ -53,7 +54,8 @@ public class FileDownloaderCommand implements CommandLineRunner {
                     .buffer(100)
                     .flatMap(fileDeduplicator::deduplicateFiles)
                     .flatMap(downloadTargetFinalizer::finalizeDownloadTargets)
-                    .doOnError(error -> log.error("Failed to catch an error on the work unit level!", error))
+                    .timeout(Duration.ofDays(7))
+                    .doOnError(error -> log.error("Failed to catch an error!", error))
                     .blockLast();
 
             workUnitManipulator.closeWorkUnit(workUnit);
