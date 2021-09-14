@@ -39,9 +39,14 @@ public class FileDownloaderCommand implements CommandLineRunner {
         while (true) {
             final WorkUnit workUnit = workUnitManipulator.startWorkUnit();
 
+            log.info("Started processing work unit: {}.", workUnit.getLocation());
+
             final List<String> urls = workUnitParser.parseSourceLocations(workUnit);
 
+            log.info("Parsed {} urls.", urls.size());
+
             final List<DownloadTarget> resultFiles = Lists.partition(urls, 100).stream()
+                    .parallel()
                     .flatMap(sourceLocations -> sourceLocationDeduplicationClient
                             .deduplicateSourceLocations(sourceLocations).stream())
                     .flatMap(rawSourceLocation -> downloadTargetConverter.convert(rawSourceLocation).stream())
@@ -49,9 +54,14 @@ public class FileDownloaderCommand implements CommandLineRunner {
                     .flatMap(downloadTarget -> downloadTargetValidator.validateFiles(downloadTarget).stream())
                     .toList();
 
+            log.info("Got {} successfully downloaded documents.", resultFiles.size());
+
             Lists.partition(resultFiles, 100).stream()
+                    .parallel()
                     .flatMap(deduplicate -> fileDeduplicator.deduplicateFiles(deduplicate).stream())
                     .forEach(downloadTargetFinalizer::finalizeDownloadTargets);
+
+            log.info("Finished work unit: {}.", workUnit);
 
             workUnitManipulator.closeWorkUnit(workUnit);
         }

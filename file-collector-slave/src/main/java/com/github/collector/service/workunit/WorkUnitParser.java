@@ -9,8 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -22,8 +20,6 @@ public class WorkUnitParser {
     private final SourceLocationValidation sourceLocationValidation;
 
     public List<String> parseSourceLocations(final WorkUnit workUnit) {
-        log.info("Started processing work unit: {}.", workUnit.getLocation());
-
         return WarcRecordStreamFactory.streamOf(workUnit.getLocation(), WarcRecordType.RESPONSE)
                 .map(parsingContextFactory::buildParsingContext)
                 .flatMap(sourceLocationParser::parseLocations)
