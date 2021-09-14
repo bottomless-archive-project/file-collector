@@ -41,7 +41,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
                         .flatMapMany(workUnitParser::parseSourceLocations)
                         .buffer(100)
                         .flatMap(sourceLocationDeduplicationClient::deduplicateSourceLocations)
-                        .map(downloadTargetConverter::convert)
+                        .flatMap(downloadTargetConverter::convert)
                         .flatMap(sourceDownloader::downloadToFile)
                         .flatMap(downloadTargetValidator::validateFiles)
                         .buffer(100)
