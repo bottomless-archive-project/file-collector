@@ -54,7 +54,6 @@ public class FileDownloaderCommand implements CommandLineRunner {
                     .buffer(100)
                     .flatMap(fileDeduplicator::deduplicateFiles)
                     .flatMap(downloadTargetFinalizer::finalizeDownloadTargets)
-                    .timeout(Duration.ofDays(7))
                     .doOnError(error -> log.error("Failed to catch an error!", error))
                     .blockLast();
 
