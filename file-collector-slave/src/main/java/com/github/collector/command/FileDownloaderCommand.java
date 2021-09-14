@@ -2,6 +2,7 @@ package com.github.collector.command;
 
 import com.github.collector.service.deduplication.FileDeduplicator;
 import com.github.collector.service.deduplication.SourceLocationDeduplicationClient;
+import com.github.collector.service.domain.DownloadTarget;
 import com.github.collector.service.download.DownloadTargetConverter;
 import com.github.collector.service.download.DownloadTargetFinalizer;
 import com.github.collector.service.download.SourceDownloader;
@@ -10,14 +11,12 @@ import com.github.collector.service.work.domain.WorkUnit;
 import com.github.collector.service.workunit.WorkUnitGenerator;
 import com.github.collector.service.workunit.WorkUnitManipulator;
 import com.github.collector.service.workunit.WorkUnitParser;
+import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
-import java.time.Duration;
 import java.util.List;
 
 @Slf4j
@@ -40,22 +39,19 @@ public class FileDownloaderCommand implements CommandLineRunner {
         while (true) {
             final WorkUnit workUnit = workUnitManipulator.startWorkUnit();
 
-            final List<String> urls = Mono.just(workUnit)
-                    .flatMapMany(workUnitParser::parseSourceLocations)
-                    .buffer()
-                    .blockLast();
+            final List<String> urls = workUnitParser.parseSourceLocations(workUnit);
 
-            Flux.fromIterable(urls)
-                    .buffer(100)
-                    .flatMap(sourceLocationDeduplicationClient::deduplicateSourceLocations)
-                    .flatMap(downloadTargetConverter::convert)
-                    .flatMap(sourceDownloader::downloadToFile)
-                    .flatMap(downloadTargetValidator::validateFiles)
-                    .buffer(100)
-                    .flatMap(fileDeduplicator::deduplicateFiles)
-                    .flatMap(downloadTargetFinalizer::finalizeDownloadTargets)
-                    .doOnError(error -> log.error("Failed to catch an error!", error))
-                    .blockLast();
+            final List<DownloadTarget> resultFiles = Lists.partition(urls, 100).stream()
+                    .flatMap(sourceLocations -> sourceLocationDeduplicationClient
+                            .deduplicateSourceLocations(sourceLocations).stream())
+                    .flatMap(rawSourceLocation -> downloadTargetConverter.convert(rawSourceLocation).stream())
+                    .flatMap(downloadTarget -> sourceDownloader.downloadToFile(downloadTarget).stream())
+                    .flatMap(downloadTarget -> downloadTargetValidator.validateFiles(downloadTarget).stream())
+                    .toList();
+
+            Lists.partition(resultFiles, 100).stream()
+                    .flatMap(deduplicate -> fileDeduplicator.deduplicateFiles(deduplicate).stream())
+                    .forEach(downloadTargetFinalizer::finalizeDownloadTargets);
 
             workUnitManipulator.closeWorkUnit(workUnit);
         }

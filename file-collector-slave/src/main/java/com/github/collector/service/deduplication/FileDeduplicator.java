@@ -6,11 +6,9 @@ import com.github.collector.service.hash.HashConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
-import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -20,24 +18,24 @@ public class FileDeduplicator {
     private final HashConverter hashConverter;
     private final FileDeduplicationClient fileDeduplicationClient;
 
-    public Flux<DeduplicationResult> deduplicateFiles(final List<DownloadTarget> downloadTargets) {
+    public List<DeduplicationResult> deduplicateFiles(final List<DownloadTarget> downloadTargets) {
         log.info("Starting to deduplicate {} files.", downloadTargets.size());
 
-        return Mono.fromCallable(() -> hashConverter.createHashesWithoutDuplicates(downloadTargets))
-                .flatMapMany(hashPathMap -> fileDeduplicationClient.deduplicateFiles(hashPathMap.keySet())
-                        .flatMap(uniqueHashes -> Flux.fromIterable(uniqueHashes)
-                                .map(hash -> {
-                                    final DownloadTarget downloadTarget = hashPathMap.get(hash);
+        final Map<String, DownloadTarget> hashPathMap = hashConverter.createHashesWithoutDuplicates(downloadTargets);
 
-                                    return DeduplicationResult.builder()
-                                            .duplicate(!uniqueHashes.contains(hash))
-                                            .fileLocation(downloadTarget.getTargetLocation())
-                                            .hash(hash)
-                                            .extension(downloadTarget.getSourceLocation().getExtension())
-                                            .build();
-                                })
-                        )
+        return fileDeduplicationClient.deduplicateFiles(hashPathMap.keySet()).stream()
+                .flatMap(uniqueHashes -> uniqueHashes.stream()
+                        .map(hash -> {
+                            final DownloadTarget downloadTarget = hashPathMap.get(hash);
+
+                            return DeduplicationResult.builder()
+                                    .duplicate(!uniqueHashes.contains(hash))
+                                    .fileLocation(downloadTarget.getTargetLocation())
+                                    .hash(hash)
+                                    .extension(downloadTarget.getSourceLocation().getExtension())
+                                    .build();
+                        })
                 )
-                .timeout(Duration.ofDays(7));
+                .toList();
     }
 }

@@ -5,10 +5,10 @@ import com.github.collector.service.domain.SourceLocation;
 import com.github.collector.service.domain.TargetLocation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -16,7 +16,7 @@ public class DownloadTargetConverter {
 
     private final TargetLocationFactory targetLocationFactory;
 
-    public Mono<DownloadTarget> convert(final String rawSourceLocation) {
+    public Optional<DownloadTarget> convert(final String rawSourceLocation) {
         try {
             final SourceLocation sourceLocation = SourceLocation.builder()
                     .location(new URI(rawSourceLocation))
@@ -24,14 +24,14 @@ public class DownloadTargetConverter {
 
             final TargetLocation targetLocation = targetLocationFactory.newTargetLocation(sourceLocation);
 
-            return Mono.just(
+            return Optional.of(
                     DownloadTarget.builder()
                             .sourceLocation(sourceLocation)
                             .targetLocation(targetLocation)
                             .build()
             );
         } catch (final URISyntaxException e) {
-            return Mono.empty();
+            return Optional.empty();
         }
     }
 }

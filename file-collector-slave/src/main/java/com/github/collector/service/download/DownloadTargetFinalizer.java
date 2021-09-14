@@ -17,22 +17,18 @@ public class DownloadTargetFinalizer {
 
     private final FileConfigurationProperties fileConfigurationProperties;
 
-    public Mono<Void> finalizeDownloadTargets(final DeduplicationResult deduplicationResult) {
-        return Mono.fromCallable(() -> {
-            try {
-                if (deduplicationResult.isDuplicate()) {
-                    deduplicationResult.getFileLocation().delete();
-                } else {
-                    deduplicationResult.getFileLocation().move(
-                            Path.of(fileConfigurationProperties.getResultFolder())
-                                    .resolve(deduplicationResult.getHash() + "." + deduplicationResult.getExtension())
-                    );
-                }
-            } catch (final IOException e) {
-                log.error("Failed to delete or move the download target!", e);
+    public void finalizeDownloadTargets(final DeduplicationResult deduplicationResult) {
+        try {
+            if (deduplicationResult.isDuplicate()) {
+                deduplicationResult.getFileLocation().delete();
+            } else {
+                deduplicationResult.getFileLocation().move(
+                        Path.of(fileConfigurationProperties.getResultFolder())
+                                .resolve(deduplicationResult.getHash() + "." + deduplicationResult.getExtension())
+                );
             }
-
-            return null;
-        });
+        } catch (final IOException e) {
+            log.error("Failed to delete or move the download target!", e);
+        }
     }
 }

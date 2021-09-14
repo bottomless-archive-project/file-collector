@@ -5,10 +5,10 @@ import com.github.collector.service.domain.TargetLocation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -17,7 +17,7 @@ public class DownloadTargetValidator {
 
     private final List<Validator> validators;
 
-    public Mono<DownloadTarget> validateFiles(final DownloadTarget downloadTarget) {
+    public Optional<DownloadTarget> validateFiles(final DownloadTarget downloadTarget) {
         final TargetLocation targetLocation = downloadTarget.getTargetLocation();
 
         try {
@@ -27,7 +27,7 @@ public class DownloadTargetValidator {
 
                 targetLocation.delete();
 
-                return Mono.empty();
+                return Optional.empty();
             }
 
             final String extension = downloadTarget.getSourceLocation().getExtension();
@@ -40,14 +40,14 @@ public class DownloadTargetValidator {
             if (!validationResult) {
                 targetLocation.delete();
 
-                return Mono.empty();
+                return Optional.empty();
             }
         } catch (final IOException e) {
             log.error("Failed to access document at {}.", downloadTarget.getTargetLocation().getPath(), e);
 
-            return Mono.empty();
+            return Optional.empty();
         }
 
-        return Mono.just(downloadTarget);
+        return Optional.of(downloadTarget);
     }
 }

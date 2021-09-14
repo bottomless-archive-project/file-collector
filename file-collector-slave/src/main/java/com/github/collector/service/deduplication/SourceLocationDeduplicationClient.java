@@ -24,7 +24,7 @@ public class SourceLocationDeduplicationClient {
     private final WebClient webClient;
     private final MasterServerConfigurationProperties masterServerConfigurationProperties;
 
-    public Flux<String> deduplicateSourceLocations(final List<String> sourceLocations) {
+    public List<String> deduplicateSourceLocations(final List<String> sourceLocations) {
         log.info("Deduplicating {} urls.", sourceLocations.size());
 
         final DeduplicateDocumentLocationRequest deduplicateDocumentLocationRequest =
@@ -45,6 +45,8 @@ public class SourceLocationDeduplicationClient {
                             deduplicateDocumentLocationResponse.getLocations().size());
 
                     return Flux.fromIterable(deduplicateDocumentLocationRequest.getLocations());
-                });
+                })
+                .buffer()
+                .blockLast();
     }
 }

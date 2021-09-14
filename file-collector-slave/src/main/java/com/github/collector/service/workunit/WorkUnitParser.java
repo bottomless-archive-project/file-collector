@@ -1,13 +1,16 @@
 package com.github.collector.service.workunit;
 
-import com.github.bottomlessarchive.warc.service.WarcRecordFluxFactory;
+import com.github.bottomlessarchive.warc.service.WarcRecordStreamFactory;
 import com.github.bottomlessarchive.warc.service.record.domain.WarcRecordType;
 import com.github.collector.service.download.SourceLocationValidation;
 import com.github.collector.service.work.domain.WorkUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -18,12 +21,13 @@ public class WorkUnitParser {
     private final ParsingContextFactory parsingContextFactory;
     private final SourceLocationValidation sourceLocationValidation;
 
-    public Flux<String> parseSourceLocations(final WorkUnit workUnit) {
+    public List<String> parseSourceLocations(final WorkUnit workUnit) {
         log.info("Started processing work unit: {}.", workUnit.getLocation());
 
-        return WarcRecordFluxFactory.buildWarcRecordFlux(workUnit.getLocation(), WarcRecordType.RESPONSE)
+        return WarcRecordStreamFactory.streamOf(workUnit.getLocation(), WarcRecordType.RESPONSE)
                 .map(parsingContextFactory::buildParsingContext)
                 .flatMap(sourceLocationParser::parseLocations)
-                .filter(sourceLocationValidation::shouldCrawlSource);
+                .filter(sourceLocationValidation::shouldCrawlSource)
+                .toList();
     }
 }
