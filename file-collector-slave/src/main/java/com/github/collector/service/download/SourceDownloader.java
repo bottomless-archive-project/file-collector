@@ -10,7 +10,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -19,7 +18,7 @@ public class SourceDownloader {
 
     private final DownloadRequestFactory downloadRequestFactory;
 
-    public Optional<DownloadTarget> downloadToFile(final DownloadTarget downloadTarget) {
+    public Mono<DownloadTarget> downloadToFile(final DownloadTarget downloadTarget) {
         final Flux<DataBuffer> dataBufferFlux = downloadRequestFactory.newDownloadRequest(downloadTarget.getSourceLocation());
 
         return DataBufferUtils.write(dataBufferFlux, downloadTarget.getTargetLocation().getPath())
@@ -37,7 +36,6 @@ public class SourceDownloader {
                     }
 
                     return Mono.empty();
-                })
-                .blockOptional();
+                });
     }
 }

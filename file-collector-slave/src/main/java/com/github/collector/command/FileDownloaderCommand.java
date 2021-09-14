@@ -16,8 +16,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -45,14 +48,17 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
             log.info("Parsed {} urls.", urls.size());
 
-            final List<DownloadTarget> resultFiles = Lists.partition(urls, 100).stream()
-                    .parallel()
+            final Set<DownloadTarget> downloadTargets = Lists.partition(urls, 100).stream()
                     .flatMap(sourceLocations -> sourceLocationDeduplicationClient
                             .deduplicateSourceLocations(sourceLocations).stream())
                     .flatMap(rawSourceLocation -> downloadTargetConverter.convert(rawSourceLocation).stream())
-                    .flatMap(downloadTarget -> sourceDownloader.downloadToFile(downloadTarget).stream())
-                    .flatMap(downloadTarget -> downloadTargetValidator.validateFiles(downloadTarget).stream())
-                    .toList();
+                    .collect(Collectors.toSet());
+
+            final List<DownloadTarget> resultFiles = Flux.fromIterable(downloadTargets)
+                    .flatMap(sourceDownloader::downloadToFile)
+                    .flatMap(downloadTargetValidator::validateFiles)
+                    .buffer()
+                    .blockLast();
 
             log.info("Got {} successfully downloaded documents.", resultFiles.size());
 
