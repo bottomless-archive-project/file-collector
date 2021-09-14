@@ -39,7 +39,6 @@ public class FileDownloaderCommand implements CommandLineRunner {
         Flux.generate(workUnitGenerator)
                 .flatMap(workUnit -> Mono.just(workUnit)
                         .flatMapMany(workUnitParser::parseSourceLocations)
-                        .doOnNext(log::info)
                         .buffer(100)
                         .flatMap(sourceLocationDeduplicationClient::deduplicateSourceLocations)
                         .flatMap(downloadTargetConverter::convert)
