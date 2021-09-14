@@ -68,7 +68,7 @@ public class WorkUnitClient {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(
                         CloseWorkUnitRequest.builder()
-                                .workUnitId(workUnit.getLocation())
+                                .workUnitId(workUnit.getId().toString())
                                 .build()
                 )
                 .retrieve()
