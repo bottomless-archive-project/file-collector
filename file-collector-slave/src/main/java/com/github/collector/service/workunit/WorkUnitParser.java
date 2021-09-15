@@ -31,7 +31,7 @@ public class WorkUnitParser {
 
             Optional<WarcRecord<WarcContentBlock>> optionalWarcRecord;
             do {
-                optionalWarcRecord = warcReader.readRecord();
+                optionalWarcRecord = readNextRecord(warcReader);
 
                 urlsInWorkUnit.addAll(
                         optionalWarcRecord
@@ -48,18 +48,22 @@ public class WorkUnitParser {
         }
     }
 
-    private Set<String> parseWarcRecord(final WarcRecord<WarcContentBlock> warcRecord) {
+    private Optional<WarcRecord<WarcContentBlock>> readNextRecord(final WarcReader warcReader) {
         try {
-            return Stream.of(warcRecord)
-                    .filter(WarcRecord::isResponse)
-                    .map(parsingContextFactory::buildParsingContext)
-                    .flatMap(sourceLocationParser::parseLocations)
-                    .filter(sourceLocationValidation::shouldCrawlSource)
-                    .collect(Collectors.toSet());
+            return warcReader.readRecord();
         } catch (final WarcFormatException e) {
             log.debug("Unable to parse warc file: " + e.getMessage());
 
-            return Collections.emptySet();
+            return readNextRecord(warcReader);
         }
+    }
+
+    private Set<String> parseWarcRecord(final WarcRecord<WarcContentBlock> warcRecord) {
+        return Stream.of(warcRecord)
+                .filter(WarcRecord::isResponse)
+                .map(parsingContextFactory::buildParsingContext)
+                .flatMap(sourceLocationParser::parseLocations)
+                .filter(sourceLocationValidation::shouldCrawlSource)
+                .collect(Collectors.toSet());
     }
 }
