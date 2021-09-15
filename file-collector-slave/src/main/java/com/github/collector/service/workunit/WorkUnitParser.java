@@ -1,6 +1,7 @@
 package com.github.collector.service.workunit;
 
 import com.github.bottomlessarchive.warc.service.WarcFormatException;
+import com.github.bottomlessarchive.warc.service.WarcParsingException;
 import com.github.bottomlessarchive.warc.service.WarcReader;
 import com.github.bottomlessarchive.warc.service.content.domain.WarcContentBlock;
 import com.github.bottomlessarchive.warc.service.record.domain.WarcRecord;
@@ -59,11 +60,17 @@ public class WorkUnitParser {
     }
 
     private Set<String> parseWarcRecord(final WarcRecord<WarcContentBlock> warcRecord) {
-        return Stream.of(warcRecord)
-                .filter(WarcRecord::isResponse)
-                .map(parsingContextFactory::buildParsingContext)
-                .flatMap(sourceLocationParser::parseLocations)
-                .filter(sourceLocationValidation::shouldCrawlSource)
-                .collect(Collectors.toSet());
+        try {
+            return Stream.of(warcRecord)
+                    .filter(WarcRecord::isResponse)
+                    .map(parsingContextFactory::buildParsingContext)
+                    .flatMap(sourceLocationParser::parseLocations)
+                    .filter(sourceLocationValidation::shouldCrawlSource)
+                    .collect(Collectors.toSet());
+        } catch (final WarcParsingException e) {
+            log.debug("Unable to parse warc file: " + e.getMessage());
+
+            return Collections.emptySet();
+        }
     }
 }
