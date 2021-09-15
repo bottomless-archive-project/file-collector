@@ -54,6 +54,11 @@ public class FileDownloaderCommand implements CommandLineRunner {
                     .flatMap(rawSourceLocation -> downloadTargetConverter.convert(rawSourceLocation).stream())
                     .collect(Collectors.toSet());
 
+            // An error happened while doing the crawl parsing
+            if (downloadTargets.isEmpty()) {
+                continue;
+            }
+
             final List<DownloadTarget> resultFiles = Flux.fromIterable(downloadTargets)
                     .flatMap(sourceDownloader::downloadToFile)
                     .flatMap(downloadTargetValidator::validateFiles)
