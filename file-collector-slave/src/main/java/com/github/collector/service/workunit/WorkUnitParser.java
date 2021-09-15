@@ -5,13 +5,17 @@ import com.github.bottomlessarchive.warc.service.WarcParsingException;
 import com.github.bottomlessarchive.warc.service.WarcReader;
 import com.github.bottomlessarchive.warc.service.content.domain.WarcContentBlock;
 import com.github.bottomlessarchive.warc.service.record.domain.WarcRecord;
+import com.github.collector.service.domain.DownloadTarget;
+import com.github.collector.service.domain.SourceLocation;
+import com.github.collector.service.download.SourceDownloader;
 import com.github.collector.service.download.SourceLocationValidation;
+import com.github.collector.service.download.TargetLocationFactory;
 import com.github.collector.service.work.domain.WorkUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.net.URL;
+import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -21,13 +25,27 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class WorkUnitParser {
 
+    private final SourceDownloader sourceDownloader;
+    private final TargetLocationFactory targetLocationFactory;
     private final SourceLocationParser sourceLocationParser;
     private final ParsingContextFactory parsingContextFactory;
     private final SourceLocationValidation sourceLocationValidation;
 
     public List<String> parseSourceLocations(final WorkUnit workUnit) {
         try {
-            final WarcReader warcReader = new WarcReader(new URL(workUnit.getLocation()));
+            // Download to local file
+            log.info("Started downloading the crawl file.");
+            final SourceLocation warcSourceLocation = SourceLocation.builder()
+                    .location(new URI(workUnit.getLocation()))
+                    .build();
+            final DownloadTarget downloadTarget = DownloadTarget.builder()
+                    .sourceLocation(warcSourceLocation)
+                    .targetLocation(targetLocationFactory.newTargetLocation(warcSourceLocation))
+                    .build();
+
+            sourceDownloader.downloadToFile(downloadTarget);
+
+            final WarcReader warcReader = new WarcReader(downloadTarget.getTargetLocation().inputStream());
             final Set<String> urlsInWorkUnit = new HashSet<>();
 
             Optional<WarcRecord<WarcContentBlock>> optionalWarcRecord;
@@ -40,6 +58,8 @@ public class WorkUnitParser {
                                 .orElse(Collections.emptySet())
                 );
             } while (optionalWarcRecord.isPresent());
+
+            downloadTarget.getTargetLocation().delete();
 
             return new ArrayList<>(urlsInWorkUnit);
         } catch (final Exception e) {
