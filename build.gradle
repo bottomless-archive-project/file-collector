@@ -30,7 +30,7 @@ allprojects {
         targetCompatibility = JavaVersion.VERSION_16
     }
 
-    group 'org.example'
+    group 'com.github.bottomlessarchive.filecollector'
     version '1.0-SNAPSHOT'
 
     apply plugin: 'io.spring.dependency-management'
