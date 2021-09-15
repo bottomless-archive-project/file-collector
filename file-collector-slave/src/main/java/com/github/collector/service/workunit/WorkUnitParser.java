@@ -43,7 +43,8 @@ public class WorkUnitParser {
                     .targetLocation(targetLocationFactory.newTargetLocation(warcSourceLocation))
                     .build();
 
-            sourceDownloader.downloadToFile(downloadTarget);
+            sourceDownloader.downloadToFile(downloadTarget)
+                    .block();
 
             final WarcReader warcReader = new WarcReader(downloadTarget.getTargetLocation().inputStream());
             final Set<String> urlsInWorkUnit = new HashSet<>();
