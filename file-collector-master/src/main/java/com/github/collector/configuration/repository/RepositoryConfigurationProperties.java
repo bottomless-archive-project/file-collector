@@ -13,7 +13,6 @@ public class RepositoryConfigurationProperties {
 
     private final String host;
     private final int port;
-    private final boolean noCursorTimeout;
     private final String uri;
 
     public boolean isUriConfiguration() {

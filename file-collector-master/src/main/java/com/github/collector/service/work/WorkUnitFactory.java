@@ -19,7 +19,7 @@ public class WorkUnitFactory {
         return workUnitRepository.findById(workUnitId)
                 .map(workUnitDatabaseEntity -> WorkUnit.builder()
                         .id(workUnitDatabaseEntity.getId())
-                        .location(workUnitDatabaseEntity.getLocation())
+                        .locations(workUnitDatabaseEntity.getLocations())
                         .status(WorkUnitStatus.valueOf(workUnitDatabaseEntity.getStatus()))
                         .build()
                 );

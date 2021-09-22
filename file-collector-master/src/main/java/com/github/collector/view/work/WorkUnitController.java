@@ -28,7 +28,7 @@ public class WorkUnitController {
 
         return StartWorkUnitResponse.builder()
                 .id(workUnit.getId())
-                .location(workUnit.getLocation())
+                .locations(workUnit.getLocations())
                 .build();
     }
 

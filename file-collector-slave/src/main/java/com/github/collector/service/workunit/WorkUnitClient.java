@@ -54,7 +54,7 @@ public class WorkUnitClient {
         return Optional.of(
                 WorkUnit.builder()
                         .id(startWorkUnitResponse.getId())
-                        .location(startWorkUnitResponse.getLocation())
+                        .locations(startWorkUnitResponse.getLocations())
                         .build()
         );
     }

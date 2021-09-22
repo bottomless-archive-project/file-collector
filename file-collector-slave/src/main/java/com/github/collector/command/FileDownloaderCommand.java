@@ -10,8 +10,6 @@ import com.github.collector.service.validator.DownloadTargetValidator;
 import com.github.collector.service.work.domain.WorkUnit;
 import com.github.collector.service.workunit.WorkUnitGenerator;
 import com.github.collector.service.workunit.WorkUnitManipulator;
-import com.github.collector.service.workunit.WorkUnitParser;
-import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -19,8 +17,10 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 public class FileDownloaderCommand implements CommandLineRunner {
 
     private final WorkUnitGenerator workUnitGenerator;
-    private final WorkUnitParser workUnitParser;
     private final SourceDownloader sourceDownloader;
     private final DownloadTargetValidator downloadTargetValidator;
     private final DownloadTargetConverter downloadTargetConverter;
@@ -42,22 +41,14 @@ public class FileDownloaderCommand implements CommandLineRunner {
         while (true) {
             final WorkUnit workUnit = workUnitManipulator.startWorkUnit();
 
-            log.info("Started processing work unit: {}.", workUnit.getLocation());
+            log.info("Started processing work unit: {}.", workUnit.getId());
 
-            final List<String> urls = workUnitParser.parseSourceLocations(workUnit);
-
-            log.info("Parsed {} urls.", urls.size());
-
-            final Set<DownloadTarget> downloadTargets = Lists.partition(urls, 100).stream()
-                    .flatMap(sourceLocations -> sourceLocationDeduplicationClient
-                            .deduplicateSourceLocations(sourceLocations).stream())
-                    .flatMap(rawSourceLocation -> downloadTargetConverter.convert(rawSourceLocation).stream())
+            final Set<DownloadTarget> downloadTargets = Stream.of(workUnit.getLocations())
+                    .map(sourceLocationDeduplicationClient::deduplicateSourceLocations) //TODO: The dedup should happen on the master before returning the work unit
+                    .flatMap(rawSourceLocation -> rawSourceLocation.stream()
+                            .map(downloadTargetConverter::convert))
+                    .flatMap(Optional::stream)
                     .collect(Collectors.toSet());
-
-            // An error happened while doing the crawl parsing
-            if (downloadTargets.isEmpty()) {
-                continue;
-            }
 
             final List<DownloadTarget> resultFiles = Flux.fromIterable(downloadTargets)
                     .flatMap(sourceDownloader::downloadToFile)
@@ -67,8 +58,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
             log.info("Got {} successfully downloaded documents.", resultFiles.size());
 
-            Lists.partition(resultFiles, 100).stream()
-                    .parallel()
+            Stream.of(resultFiles)
                     .flatMap(deduplicate -> fileDeduplicator.deduplicateFiles(deduplicate).stream())
                     .forEach(downloadTargetFinalizer::finalizeDownloadTargets);
 
