@@ -2,6 +2,7 @@ apply plugin: 'org.springframework.boot'
 
 dependencies {
     implementation project(':file-collector-common')
+    implementation project(':file-collector-library:file-collector-work-unit-service')
 
     implementation group: 'org.jsoup', name: 'jsoup', version: '1.14.2'
     implementation group: 'com.google.guava', name: 'guava', version: '30.1.1-jre'
