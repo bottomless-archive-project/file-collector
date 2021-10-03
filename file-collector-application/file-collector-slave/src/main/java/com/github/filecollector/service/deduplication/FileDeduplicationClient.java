@@ -1,8 +1,8 @@
 package com.github.filecollector.service.deduplication;
 
 import com.github.filecollector.configuration.MasterServerConfigurationProperties;
-import com.github.filecollector.view.document.request.DocumentDeduplicationRequest;
-import com.github.filecollector.view.document.response.DocumentDeduplicationResponse;
+import com.github.filecollector.document.view.request.DocumentDeduplicationRequest;
+import com.github.filecollector.document.view.response.DocumentDeduplicationResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;

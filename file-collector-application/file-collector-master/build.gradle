@@ -8,7 +8,7 @@ apply plugin: 'org.springframework.boot'
 dependencies {
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
 
-    implementation project(':file-collector-common')
+    implementation project(':file-collector-library:file-collector-document-view')
     implementation project(':file-collector-library:file-collector-work-unit-view')
     implementation project(':file-collector-library:file-collector-work-unit-service')
 

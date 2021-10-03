@@ -1,5 +1,4 @@
 rootProject.name = 'file-collector'
-include 'file-collector-common'
 
 include 'file-collector-application'
 include 'file-collector-application:file-collector-master'
@@ -12,4 +11,5 @@ include 'file-collector-library:file-collector-location-repository'
 include 'file-collector-library:file-collector-work-unit-service'
 include 'file-collector-library:file-collector-work-unit-repository'
 include 'file-collector-library:file-collector-work-unit-view'
+include 'file-collector-library:file-collector-document-view'
 

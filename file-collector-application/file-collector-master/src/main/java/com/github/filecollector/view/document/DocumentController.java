@@ -1,8 +1,8 @@
 package com.github.filecollector.view.document;
 
 import com.github.filecollector.service.document.DocumentService;
-import com.github.filecollector.view.document.request.DocumentDeduplicationRequest;
-import com.github.filecollector.view.document.response.DocumentDeduplicationResponse;
+import com.github.filecollector.document.view.request.DocumentDeduplicationRequest;
+import com.github.filecollector.document.view.response.DocumentDeduplicationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

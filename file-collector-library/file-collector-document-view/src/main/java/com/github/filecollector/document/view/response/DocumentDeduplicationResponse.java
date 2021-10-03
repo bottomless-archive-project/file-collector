@@ -1,4 +1,4 @@
-package com.github.filecollector.view.document.response;
+package com.github.filecollector.document.view.response;
 
 import lombok.Builder;
 import lombok.Value;
