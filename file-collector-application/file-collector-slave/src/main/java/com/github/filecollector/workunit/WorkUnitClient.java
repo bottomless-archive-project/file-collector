@@ -2,8 +2,8 @@ package com.github.filecollector.workunit;
 
 import com.github.filecollector.configuration.MasterServerConfigurationProperties;
 import com.github.filecollector.workunit.service.domain.WorkUnit;
-import com.github.filecollector.view.work.request.CloseWorkUnitRequest;
-import com.github.filecollector.view.work.response.StartWorkUnitResponse;
+import com.github.filecollector.workunit.view.request.CloseWorkUnitRequest;
+import com.github.filecollector.workunit.view.response.StartWorkUnitResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;

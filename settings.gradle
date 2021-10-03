@@ -9,4 +9,5 @@ include 'file-collector-application:file-collector-loader'
 include 'file-collector-library'
 include 'file-collector-library:file-collector-work-unit-service'
 include 'file-collector-library:file-collector-work-unit-repository'
+include 'file-collector-library:file-collector-work-unit-view'
 

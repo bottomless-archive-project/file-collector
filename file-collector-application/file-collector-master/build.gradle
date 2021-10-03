@@ -5,11 +5,11 @@ buildscript {
 }
 
 apply plugin: 'org.springframework.boot'
-
 dependencies {
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
 
     implementation project(':file-collector-common')
+    implementation project(':file-collector-library:file-collector-work-unit-view')
     implementation project(':file-collector-library:file-collector-work-unit-service')
 
     implementation group: 'org.mongodb', name: 'mongodb-driver-sync'
@@ -18,3 +18,4 @@ dependencies {
 
     implementation group: 'com.github.bottomless-archive-project', name: 'common-crawl-client', version: 'd2e0d136c3'
 }
+
