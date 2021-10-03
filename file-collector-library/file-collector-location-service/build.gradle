@@ -1,0 +1,5 @@
+dependencies {
+    implementation project(':file-collector-library:file-collector-location-repository')
+
+    implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
+}

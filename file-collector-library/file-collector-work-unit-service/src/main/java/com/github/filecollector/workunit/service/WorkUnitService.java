@@ -1,5 +1,6 @@
 package com.github.filecollector.workunit.service;
 
+import com.github.filecollector.location.service.DocumentLocationService;
 import com.github.filecollector.workunit.repository.WorkUnitRepository;
 import com.github.filecollector.workunit.repository.domain.WorkUnitDatabaseEntity;
 import com.github.filecollector.workunit.service.domain.WorkUnit;
@@ -15,6 +16,7 @@ import java.util.Optional;
 public class WorkUnitService {
 
     private final WorkUnitRepository workUnitRepository;
+    private final DocumentLocationService documentLocationService;
 
     public void createWorkUnit(final List<WorkUnit> workUnits) {
         final List<WorkUnitDatabaseEntity> workUnitDatabaseEntities = workUnits.stream()
@@ -34,12 +36,16 @@ public class WorkUnitService {
 
     public Optional<WorkUnit> startWorkUnit() {
         return workUnitRepository.startWorkUnit()
-                .map(workUnitDatabaseEntity -> WorkUnit.builder()
-                        .id(workUnitDatabaseEntity.getId())
-                        .locations(workUnitDatabaseEntity.getLocations())
-                        .status(WorkUnitStatus.valueOf(workUnitDatabaseEntity.getStatus()))
-                        .build()
-                );
+                .map(workUnitDatabaseEntity -> {
+                    final List<String> uniqueUrlsInWorkUnit = documentLocationService.deduplicateDocumentLocations(
+                            workUnitDatabaseEntity.getLocations());
+
+                    return WorkUnit.builder()
+                            .id(workUnitDatabaseEntity.getId())
+                            .locations(uniqueUrlsInWorkUnit)
+                            .status(WorkUnitStatus.valueOf(workUnitDatabaseEntity.getStatus()))
+                            .build();
+                });
     }
 
     public void finishWorkUnit(final WorkUnit workUnit) {

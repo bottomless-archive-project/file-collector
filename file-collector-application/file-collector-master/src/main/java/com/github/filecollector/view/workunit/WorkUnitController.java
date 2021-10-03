@@ -1,4 +1,4 @@
-package com.github.filecollector.view.work;
+package com.github.filecollector.view.workunit;
 
 import com.github.filecollector.workunit.service.WorkUnitFactory;
 import com.github.filecollector.workunit.service.WorkUnitService;

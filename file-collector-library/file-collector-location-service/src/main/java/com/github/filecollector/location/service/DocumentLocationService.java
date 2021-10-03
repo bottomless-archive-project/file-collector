@@ -1,7 +1,7 @@
-package com.github.filecollector.service.location;
+package com.github.filecollector.location.service;
 
-import com.github.filecollector.repository.location.DocumentLocationRepository;
-import com.github.filecollector.repository.location.domain.DocumentLocationDatabaseEntity;
+import com.github.filecollector.location.repository.DocumentLocationRepository;
+import com.github.filecollector.location.repository.domain.DocumentLocationDatabaseEntity;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.stereotype.Service;

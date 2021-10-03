@@ -1,14 +1,12 @@
 package com.github.filecollector.command;
 
 import com.github.filecollector.service.deduplication.FileDeduplicator;
-import com.github.filecollector.service.deduplication.SourceLocationDeduplicationClient;
 import com.github.filecollector.service.domain.DownloadTarget;
 import com.github.filecollector.service.download.DownloadTargetConverter;
 import com.github.filecollector.service.download.DownloadTargetFinalizer;
 import com.github.filecollector.service.download.SourceDownloader;
 import com.github.filecollector.service.validator.DownloadTargetValidator;
 import com.github.filecollector.workunit.service.domain.WorkUnit;
-import com.github.filecollector.workunit.WorkUnitGenerator;
 import com.github.filecollector.workunit.WorkUnitManipulator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,11 +25,9 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class FileDownloaderCommand implements CommandLineRunner {
 
-    private final WorkUnitGenerator workUnitGenerator;
     private final SourceDownloader sourceDownloader;
     private final DownloadTargetValidator downloadTargetValidator;
     private final DownloadTargetConverter downloadTargetConverter;
-    private final SourceLocationDeduplicationClient sourceLocationDeduplicationClient;
     private final WorkUnitManipulator workUnitManipulator;
     private final FileDeduplicator fileDeduplicator;
     private final DownloadTargetFinalizer downloadTargetFinalizer;
@@ -45,7 +41,6 @@ public class FileDownloaderCommand implements CommandLineRunner {
             log.info("Started processing work unit: {}.", workUnit.getId());
 
             final Set<DownloadTarget> downloadTargets = Stream.of(workUnit.getLocations())
-                    .map(sourceLocationDeduplicationClient::deduplicateSourceLocations) //TODO: The dedup should happen on the master before returning the work unit
                     .flatMap(rawSourceLocation -> rawSourceLocation.stream()
                             .map(downloadTargetConverter::convert))
                     .flatMap(Optional::stream)

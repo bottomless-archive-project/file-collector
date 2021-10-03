@@ -1,4 +1,4 @@
-package com.github.filecollector.repository.location.domain;
+package com.github.filecollector.location.repository.domain;
 
 import lombok.Data;
 import org.bson.codecs.pojo.annotations.BsonId;

@@ -1,6 +1,6 @@
-package com.github.filecollector.repository.location;
+package com.github.filecollector.location.repository;
 
-import com.github.filecollector.repository.location.domain.DocumentLocationDatabaseEntity;
+import com.github.filecollector.location.repository.domain.DocumentLocationDatabaseEntity;
 import com.mongodb.MongoBulkWriteException;
 import com.mongodb.bulk.BulkWriteError;
 import com.mongodb.client.MongoCollection;

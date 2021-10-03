@@ -1,3 +1,4 @@
 dependencies {
+    implementation project(':file-collector-library:file-collector-location-service')
     implementation project(':file-collector-library:file-collector-work-unit-repository')
 }
