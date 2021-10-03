@@ -1,6 +1,11 @@
 rootProject.name = 'file-collector'
-include 'file-collector-master'
-include 'file-collector-slave'
 include 'file-collector-common'
-include 'file-collector-loader'
+
+include 'file-collector-application'
+include 'file-collector-application:file-collector-master'
+include 'file-collector-application:file-collector-slave'
+include 'file-collector-application:file-collector-loader'
+
+include 'file-collector-library'
+include 'file-collector-library:file-collector-work-unit-service'
 

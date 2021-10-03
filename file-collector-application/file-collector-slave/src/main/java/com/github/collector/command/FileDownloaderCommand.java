@@ -36,6 +36,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
     private final FileDeduplicator fileDeduplicator;
     private final DownloadTargetFinalizer downloadTargetFinalizer;
 
+    //TODO: Split to application and service, move the work-unit-repository to its own service module so we can use it in the loader
     @Override
     public void run(String... args) {
         while (true) {
