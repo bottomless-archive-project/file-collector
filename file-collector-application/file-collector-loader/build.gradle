@@ -1,0 +1,3 @@
+dependencies {
+    implementation project(':file-collector-library:file-collector-work-unit-service')
+}
