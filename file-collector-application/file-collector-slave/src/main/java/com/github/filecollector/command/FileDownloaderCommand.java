@@ -13,11 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -32,7 +30,6 @@ public class FileDownloaderCommand implements CommandLineRunner {
     private final FileDeduplicator fileDeduplicator;
     private final DownloadTargetFinalizer downloadTargetFinalizer;
 
-    //TODO: Split to application and service, move the work-unit-repository to its own service module so we can use it in the loader
     @Override
     public void run(String... args) {
         while (true) {
@@ -40,17 +37,13 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
             log.info("Started processing work unit: {}.", workUnit.getId());
 
-            final Set<DownloadTarget> downloadTargets = Stream.of(workUnit.getLocations())
-                    .flatMap(rawSourceLocation -> rawSourceLocation.stream()
-                            .map(downloadTargetConverter::convert))
-                    .flatMap(Optional::stream)
-                    .collect(Collectors.toSet());
-
-            final List<DownloadTarget> resultFiles = Flux.fromIterable(downloadTargets)
+            final List<DownloadTarget> resultFiles = Flux.fromIterable(workUnit.getLocations())
+                    .map(downloadTargetConverter::convert)
+                    .flatMap(Mono::justOrEmpty)
                     .flatMap(sourceDownloader::downloadToFile)
                     .flatMap(downloadTargetValidator::validateFiles)
-                    .buffer()
-                    .blockLast();
+                    .toStream()
+                    .toList();
 
             log.info("Got {} successfully downloaded documents.", resultFiles.size());
 
