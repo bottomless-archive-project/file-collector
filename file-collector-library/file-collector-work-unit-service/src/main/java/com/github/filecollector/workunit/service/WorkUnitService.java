@@ -18,20 +18,14 @@ public class WorkUnitService {
     private final WorkUnitRepository workUnitRepository;
     private final DocumentLocationService documentLocationService;
 
-    public void createWorkUnit(final List<WorkUnit> workUnits) {
-        final List<WorkUnitDatabaseEntity> workUnitDatabaseEntities = workUnits.stream()
-                .map(workUnit -> {
-                    WorkUnitDatabaseEntity workUnitDatabaseEntity = new WorkUnitDatabaseEntity();
+    public void createWorkUnit(final WorkUnit workUnit) {
+        final WorkUnitDatabaseEntity workUnitDatabaseEntity = new WorkUnitDatabaseEntity();
 
-                    workUnitDatabaseEntity.setId(workUnit.getId());
-                    workUnitDatabaseEntity.setLocations(workUnit.getLocations());
-                    workUnitDatabaseEntity.setStatus(workUnit.getStatus().name());
+        workUnitDatabaseEntity.setId(workUnit.getId());
+        workUnitDatabaseEntity.setLocations(workUnit.getLocations());
+        workUnitDatabaseEntity.setStatus(workUnit.getStatus().name());
 
-                    return workUnitDatabaseEntity;
-                })
-                .toList();
-
-        workUnitRepository.createWorkUnits(workUnitDatabaseEntities);
+        workUnitRepository.createWorkUnit(workUnitDatabaseEntity);
     }
 
     public Optional<WorkUnit> startWorkUnit() {

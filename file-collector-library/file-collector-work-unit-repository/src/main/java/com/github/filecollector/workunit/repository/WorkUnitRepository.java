@@ -7,7 +7,6 @@ import com.mongodb.client.model.Updates;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,8 +16,8 @@ public class WorkUnitRepository {
 
     private final MongoCollection<WorkUnitDatabaseEntity> documentDatabaseEntityMongoCollection;
 
-    public void createWorkUnits(final List<WorkUnitDatabaseEntity> workUnitDatabaseEntity) {
-        documentDatabaseEntityMongoCollection.insertMany(workUnitDatabaseEntity);
+    public void createWorkUnit(final WorkUnitDatabaseEntity workUnitDatabaseEntity) {
+        documentDatabaseEntityMongoCollection.insertOne(workUnitDatabaseEntity);
     }
 
     public Optional<WorkUnitDatabaseEntity> findById(final UUID documentId) {

@@ -47,7 +47,7 @@ public class FileLoaderCommand implements CommandLineRunner {
                 if (urls.size() == 1000) {
                     log.info("Creating a new work unit. Processed url lines: {}.", processedLines);
 
-                    workUnitService.finishWorkUnit(
+                    workUnitService.createWorkUnit(
                             WorkUnit.builder()
                                     .id(UUID.randomUUID())
                                     .locations(urls)
