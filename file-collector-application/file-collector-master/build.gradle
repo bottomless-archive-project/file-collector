@@ -13,7 +13,5 @@ dependencies {
     implementation project(':file-collector-library:file-collector-work-unit-service')
 
     implementation group: 'org.mongodb', name: 'mongodb-driver-sync'
-
-    implementation group: 'com.github.bottomless-archive-project', name: 'common-crawl-client', version: 'd2e0d136c3'
 }
 
