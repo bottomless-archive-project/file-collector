@@ -2,7 +2,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 buildscript {
     ext {
-        springBootVersion = '2.5.4'
+        springBootVersion = '2.5.5'
     }
     repositories {
         mavenCentral()
@@ -12,6 +12,7 @@ buildscript {
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath('com.github.ben-manes:gradle-versions-plugin:0.29.0')
     }
 }
 
@@ -50,4 +51,6 @@ subprojects {
         compileOnly('org.projectlombok:lombok')
         annotationProcessor('org.projectlombok:lombok')
     }
+
+    apply plugin: 'com.github.ben-manes.versions'
 }
