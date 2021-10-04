@@ -1,10 +1,5 @@
-buildscript {
-    ext {
-        set('mongodb.version', '4.3.2')
-    }
-}
-
 apply plugin: 'org.springframework.boot'
+
 dependencies {
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
 
@@ -12,6 +7,6 @@ dependencies {
     implementation project(':file-collector-library:file-collector-work-unit-view')
     implementation project(':file-collector-library:file-collector-work-unit-service')
 
-    implementation group: 'org.mongodb', name: 'mongodb-driver-sync'
+    implementation group: 'org.mongodb', name: 'mongodb-driver-sync', version: '4.3.2'
 }
 
