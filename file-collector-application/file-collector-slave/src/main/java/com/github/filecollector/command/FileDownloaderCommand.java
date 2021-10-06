@@ -47,7 +47,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
             log.info("Got {} successfully downloaded documents.", resultFiles.size());
 
-            if (resultFiles.isEmpty()) {
+            if (!resultFiles.isEmpty()) {
                 Stream.of(resultFiles)
                         .flatMap(deduplicate -> fileDeduplicator.deduplicateFiles(deduplicate).stream())
                         .forEach(downloadTargetFinalizer::finalizeDownloadTargets);
@@ -55,7 +55,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
                 log.info("Skipping further file processing because no document was downloaded successfully.");
             }
 
-            log.info("Finished work unit: {}.", workUnit);
+            log.info("Finished work unit: {}.", workUnit.getId());
 
             workUnitManipulator.closeWorkUnit(workUnit);
         }
