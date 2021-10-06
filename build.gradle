@@ -2,7 +2,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 buildscript {
     ext {
-        springBootVersion = '2.5.5'
+        set('mongodb.version', '4.3.2')
     }
     repositories {
         mavenCentral()
@@ -11,7 +11,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath('org.springframework.boot:spring-boot-gradle-plugin:2.5.5')
         classpath('com.github.ben-manes:gradle-versions-plugin:0.29.0')
     }
 }

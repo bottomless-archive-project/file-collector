@@ -27,7 +27,8 @@ public class FileLoaderCommand implements CommandLineRunner {
 
         log.info("Started creating work units.");
 
-        try (BufferedReader out = new BufferedReader(new FileReader(""))) {
+        try (BufferedReader out = new BufferedReader(new FileReader(
+                "C:\\Users\\gl066f\\Downloads\\url-collection-result.txt"))) {
             boolean hasNext = true;
 
             final List<String> urls = new ArrayList<>(1000);

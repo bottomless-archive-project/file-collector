@@ -1,3 +1,5 @@
 dependencies {
     implementation project(':file-collector-library:file-collector-work-unit-service')
+
+    implementation group: 'org.mongodb', name: 'mongodb-driver-sync'
 }
