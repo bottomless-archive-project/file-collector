@@ -6,8 +6,8 @@ import com.github.filecollector.service.download.DownloadTargetConverter;
 import com.github.filecollector.service.download.DownloadTargetFinalizer;
 import com.github.filecollector.service.download.SourceDownloader;
 import com.github.filecollector.service.validator.DownloadTargetValidator;
-import com.github.filecollector.workunit.service.domain.WorkUnit;
 import com.github.filecollector.workunit.WorkUnitManipulator;
+import com.github.filecollector.workunit.domain.WorkUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -47,9 +47,13 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
             log.info("Got {} successfully downloaded documents.", resultFiles.size());
 
-            Stream.of(resultFiles)
-                    .flatMap(deduplicate -> fileDeduplicator.deduplicateFiles(deduplicate).stream())
-                    .forEach(downloadTargetFinalizer::finalizeDownloadTargets);
+            if (resultFiles.isEmpty()) {
+                Stream.of(resultFiles)
+                        .flatMap(deduplicate -> fileDeduplicator.deduplicateFiles(deduplicate).stream())
+                        .forEach(downloadTargetFinalizer::finalizeDownloadTargets);
+            } else {
+                log.info("Skipping further file processing because no document was downloaded successfully.");
+            }
 
             log.info("Finished work unit: {}.", workUnit);
 
