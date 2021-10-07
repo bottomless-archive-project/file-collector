@@ -19,10 +19,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FileLoaderCommand implements CommandLineRunner {
 
+    private static final int WORK_UNIT_SIZE = 1000;
+
     private final WorkUnitService workUnitService;
 
     @Override
     public void run(String... args) throws Exception {
+        int targetLines = 48672000;
         int processedLines = 0;
 
         log.info("Started creating work units.");
@@ -45,16 +48,21 @@ public class FileLoaderCommand implements CommandLineRunner {
 
                 urls.add(urlLine);
 
-                if (urls.size() == 1000) {
-                    log.info("Creating a new work unit. Processed url lines: {}.", processedLines);
+                if (urls.size() == WORK_UNIT_SIZE) {
+                    if (processedLines > targetLines) {
+                        log.info("Creating a new work unit. Processed url lines: {}.", processedLines);
 
-                    workUnitService.createWorkUnit(
-                            WorkUnit.builder()
-                                    .id(UUID.randomUUID())
-                                    .locations(urls)
-                                    .status(WorkUnitStatus.CREATED)
-                                    .build()
-                    );
+                        workUnitService.createWorkUnit(
+                                WorkUnit.builder()
+                                        .id(UUID.randomUUID())
+                                        .locations(urls)
+                                        .status(WorkUnitStatus.CREATED)
+                                        .build()
+                        );
+                    } else {
+                        log.info("Skipping the creation of a new work unit because these urls were already added to"
+                                + "the database. Processed url lines: {}.", processedLines);
+                    }
 
                     urls.clear();
                 }
