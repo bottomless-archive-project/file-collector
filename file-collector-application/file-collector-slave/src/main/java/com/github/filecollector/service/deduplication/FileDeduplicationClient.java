@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.util.retry.Retry;
 
 import java.net.URI;
 import java.time.Duration;
@@ -38,7 +39,7 @@ public class FileDeduplicationClient {
                 .retrieve()
                 .bodyToFlux(DocumentDeduplicationResponse.class)
                 .timeout(Duration.ofSeconds(30))
-                //.retry()
+                .retryWhen(Retry.fixedDelay(Long.MAX_VALUE, Duration.ofSeconds(30)))
                 .map(documentDeduplicationResponse -> {
                     log.info("From the sent {} file hashes {} was unique.", hashes.size(),
                             documentDeduplicationResponse.getHashes().size());
