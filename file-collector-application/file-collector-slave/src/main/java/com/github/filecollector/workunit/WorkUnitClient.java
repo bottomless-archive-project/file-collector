@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.util.retry.Retry;
 
 import java.net.URI;
 import java.time.Duration;
@@ -37,7 +38,8 @@ public class WorkUnitClient {
                 .body(BodyInserters.empty())
                 .retrieve()
                 .toEntity(StartWorkUnitResponse.class)
-                .timeout(Duration.ofSeconds(30))
+                .timeout(Duration.ofSeconds(10))
+                .retryWhen(Retry.fixedDelay(Long.MAX_VALUE, Duration.ofSeconds(30)))
                 .block();
 
         if (startWorkUnitResponseResponseEntity == null || startWorkUnitResponseResponseEntity.getStatusCode()
@@ -73,7 +75,8 @@ public class WorkUnitClient {
                 )
                 .retrieve()
                 .toBodilessEntity()
-                .timeout(Duration.ofSeconds(30))
+                .timeout(Duration.ofSeconds(10))
+                .retryWhen(Retry.fixedDelay(Long.MAX_VALUE, Duration.ofSeconds(30)))
                 .block();
     }
 }
