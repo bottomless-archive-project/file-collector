@@ -16,6 +16,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -29,35 +31,43 @@ public class FileDownloaderCommand implements CommandLineRunner {
     private final WorkUnitManipulator workUnitManipulator;
     private final FileDeduplicator fileDeduplicator;
     private final DownloadTargetFinalizer downloadTargetFinalizer;
+    private final Semaphore commandRateLimitingSemaphore;
+    private final ExecutorService commandExecutorService;
 
     @Override
-    public void run(String... args) {
+    public void run(String... args) throws Exception {
         while (true) {
+            commandRateLimitingSemaphore.acquire();
+
             final WorkUnit workUnit = workUnitManipulator.startWorkUnit();
 
-            log.info("Started processing work unit: {}.", workUnit.getId());
+            commandExecutorService.execute(() -> {
+                log.info("Started processing work unit: {}.", workUnit.getId());
 
-            final List<DownloadTarget> resultFiles = Flux.fromIterable(workUnit.getLocations())
-                    .map(downloadTargetConverter::convert)
-                    .flatMap(Mono::justOrEmpty)
-                    .flatMap(sourceDownloader::downloadToFile)
-                    .flatMap(downloadTargetValidator::validateFiles)
-                    .toStream()
-                    .toList();
+                final List<DownloadTarget> resultFiles = Flux.fromIterable(workUnit.getLocations())
+                        .map(downloadTargetConverter::convert)
+                        .flatMap(Mono::justOrEmpty)
+                        .flatMap(sourceDownloader::downloadToFile)
+                        .flatMap(downloadTargetValidator::validateFiles)
+                        .toStream()
+                        .toList();
 
-            log.info("Got {} successfully downloaded documents.", resultFiles.size());
+                log.info("Got {} successfully downloaded documents.", resultFiles.size());
 
-            if (!resultFiles.isEmpty()) {
-                Stream.of(resultFiles)
-                        .flatMap(deduplicate -> fileDeduplicator.deduplicateFiles(deduplicate).stream())
-                        .forEach(downloadTargetFinalizer::finalizeDownloadTargets);
-            } else {
-                log.info("Skipping further file processing because no document was downloaded successfully.");
-            }
+                if (!resultFiles.isEmpty()) {
+                    Stream.of(resultFiles)
+                            .flatMap(deduplicate -> fileDeduplicator.deduplicateFiles(deduplicate).stream())
+                            .forEach(downloadTargetFinalizer::finalizeDownloadTargets);
+                } else {
+                    log.info("Skipping further file processing because no document was downloaded successfully.");
+                }
 
-            log.info("Finished work unit: {}.", workUnit.getId());
+                log.info("Finished work unit: {}.", workUnit.getId());
 
-            workUnitManipulator.closeWorkUnit(workUnit);
+                workUnitManipulator.closeWorkUnit(workUnit);
+
+                commandRateLimitingSemaphore.release();
+            });
         }
     }
 }
