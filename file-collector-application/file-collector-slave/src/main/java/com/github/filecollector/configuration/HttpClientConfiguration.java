@@ -1,24 +1,18 @@
 package com.github.filecollector.configuration;
 
+import com.github.mizosoft.methanol.Methanol;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
 
 @Configuration
-public class WebClientConfiguration {
+public class HttpClientConfiguration {
 
     @Bean
-    public WebClient masterWebClient() {
-        return WebClient.builder()
-                .build();
-    }
-
-    @Bean
-    public HttpClient downloaderHttpClient() {
-        return HttpClient.newBuilder()
+    public HttpClient httpClient() {
+        return Methanol.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .followRedirects(HttpClient.Redirect.ALWAYS)
                 .build();

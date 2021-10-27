@@ -7,20 +7,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Files;
 import java.util.Optional;
-import java.util.zip.GZIPInputStream;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SourceDownloader {
 
-    private final HttpClient downloaderHttpClient;
+    private final HttpClient httpClient;
 
     public Optional<TargetLocation> downloadToFile(final SourceLocation sourceLocation,
                                                    final TargetLocation targetLocation) {
@@ -32,24 +29,7 @@ public class SourceDownloader {
                 .build();
 
         try {
-            final HttpResponse<InputStream> response = downloaderHttpClient.send(request,
-                    HttpResponse.BodyHandlers.ofInputStream());
-
-            final String encoding = response.headers()
-                    .firstValue("Content-Encoding")
-                    .orElse("");
-
-            if (encoding.equals("gzip")) {
-                log.debug("File at {} is GZIP compressed!", sourceLocation.getLocation());
-
-                try (InputStream is = new GZIPInputStream(response.body())) {
-                    Files.copy(is, targetLocation.getPath());
-                }
-            } else {
-                Files.copy(response.body(), targetLocation.getPath());
-            }
-
-            return Optional.of(targetLocation);
+            httpClient.send(request, HttpResponse.BodyHandlers.ofFile(targetLocation.getPath()));
         } catch (IOException | InterruptedException | IllegalArgumentException e) {
             log.debug("Download failed for source: {} with reason: {}.",
                     sourceLocation.getLocation(), e.getMessage());
@@ -64,5 +44,7 @@ public class SourceDownloader {
 
             return Optional.empty();
         }
+
+        return Optional.of(targetLocation);
     }
 }
