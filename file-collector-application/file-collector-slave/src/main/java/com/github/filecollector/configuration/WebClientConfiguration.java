@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
 
 import java.time.Duration;
 
@@ -30,13 +31,13 @@ public class WebClientConfiguration {
 
     @Bean
     protected ClientHttpConnector downloaderClientHttpConnector(
-            @Qualifier("downloaderHttpClient") final reactor.netty.http.client.HttpClient downloaderHttpClient) {
+            @Qualifier("downloaderHttpClient") final HttpClient downloaderHttpClient) {
         return new ReactorClientHttpConnector(downloaderHttpClient);
     }
 
     @Bean
-    protected reactor.netty.http.client.HttpClient downloaderHttpClient() {
-        return reactor.netty.http.client.HttpClient.create()
+    protected HttpClient downloaderHttpClient() {
+        return HttpClient.create()
                 .responseTimeout(Duration.ofSeconds(DOWNLOADER_CLIENT_TIMEOUT))
                 .followRedirect(true);
     }

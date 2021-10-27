@@ -25,7 +25,7 @@ public class FileLoaderCommand implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        int targetLines = 48672000;
+        int targetLines = 99527000;
         int processedLines = 0;
 
         log.info("Started creating work units.");

@@ -12,8 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -44,12 +42,10 @@ public class FileDownloaderCommand implements CommandLineRunner {
             commandExecutorService.execute(() -> {
                 log.info("Started processing work unit: {}.", workUnit.getId());
 
-                final List<DownloadTarget> resultFiles = Flux.fromIterable(workUnit.getLocations())
-                        .map(downloadTargetConverter::convert)
-                        .flatMap(Mono::justOrEmpty)
-                        .flatMap(sourceDownloader::downloadToFile)
-                        .flatMap(downloadTargetValidator::validateFiles)
-                        .toStream()
+                final List<DownloadTarget> resultFiles = workUnit.getLocations().stream()
+                        .flatMap(location -> downloadTargetConverter.convert(location).stream())
+                        .flatMap(downloadTarget1 -> sourceDownloader.downloadToFile(downloadTarget1).stream())
+                        .flatMap(downloadTarget -> downloadTargetValidator.validateFiles(downloadTarget).stream())
                         .toList();
 
                 log.info("Got {} successfully downloaded documents.", resultFiles.size());
