@@ -13,6 +13,7 @@ import java.nio.file.Path;
 public class TargetLocation {
 
     private final Path path;
+    private final String extension;
 
     public boolean exists() {
         return Files.exists(path);

@@ -12,11 +12,11 @@ import java.nio.file.Path;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DownloadTargetFinalizer {
+public class DownloadFinalizer {
 
     private final FileConfigurationProperties fileConfigurationProperties;
 
-    public void finalizeDownloadTargets(final DeduplicationResult deduplicationResult) {
+    public void finalizeDownload(final DeduplicationResult deduplicationResult) {
         try {
             if (deduplicationResult.isDuplicate()) {
                 deduplicationResult.getFileLocation().delete();

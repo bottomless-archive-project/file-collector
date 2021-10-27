@@ -18,11 +18,13 @@ public class TargetLocationFactory {
     public TargetLocation newTargetLocation(final SourceLocation sourceLocation) {
         final String id = UUID.randomUUID().toString();
 
+        final String extension = sourceLocation.getExtension();
         final Path path = Path.of(fileConfigurationProperties.getStageFolder())
-                .resolve(id + "." + sourceLocation.getExtension());
+                .resolve(id + "." + extension);
 
         return TargetLocation.builder()
                 .path(path)
+                .extension(extension)
                 .build();
     }
 }

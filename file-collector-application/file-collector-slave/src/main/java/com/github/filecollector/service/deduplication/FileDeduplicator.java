@@ -1,7 +1,7 @@
 package com.github.filecollector.service.deduplication;
 
 import com.github.filecollector.service.domain.DeduplicationResult;
-import com.github.filecollector.service.domain.DownloadTarget;
+import com.github.filecollector.service.domain.TargetLocation;
 import com.github.filecollector.service.hash.HashConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,21 +18,21 @@ public class FileDeduplicator {
     private final HashConverter hashConverter;
     private final FileDeduplicationClient fileDeduplicationClient;
 
-    public List<DeduplicationResult> deduplicateFiles(final List<DownloadTarget> downloadTargets) {
+    public List<DeduplicationResult> deduplicateFiles(final List<TargetLocation> downloadTargets) {
         log.info("Starting to deduplicate {} files.", downloadTargets.size());
 
-        final Map<String, DownloadTarget> hashPathMap = hashConverter.createHashesWithoutDuplicates(downloadTargets);
+        final Map<String, TargetLocation> hashPathMap = hashConverter.createHashesWithoutDuplicates(downloadTargets);
 
         return fileDeduplicationClient.deduplicateFiles(hashPathMap.keySet()).stream()
                 .flatMap(uniqueHashes -> uniqueHashes.stream()
                         .map(hash -> {
-                            final DownloadTarget downloadTarget = hashPathMap.get(hash);
+                            final TargetLocation downloadTarget = hashPathMap.get(hash);
 
                             return DeduplicationResult.builder()
                                     .duplicate(!uniqueHashes.contains(hash))
-                                    .fileLocation(downloadTarget.getTargetLocation())
+                                    .fileLocation(downloadTarget)
                                     .hash(hash)
-                                    .extension(downloadTarget.getSourceLocation().getExtension())
+                                    .extension(downloadTarget.getExtension())
                                     .build();
                         })
                 )

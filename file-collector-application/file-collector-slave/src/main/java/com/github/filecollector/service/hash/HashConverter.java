@@ -1,6 +1,6 @@
 package com.github.filecollector.service.hash;
 
-import com.github.filecollector.service.domain.DownloadTarget;
+import com.github.filecollector.service.domain.TargetLocation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -16,18 +16,18 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class HashConverter {
 
-    public Map<String, DownloadTarget> createHashesWithoutDuplicates(final List<DownloadTarget> downloadTargets) {
-        final Map<String, DownloadTarget> hashPathMap = new HashMap<>();
+    public Map<String, TargetLocation> createHashesWithoutDuplicates(final List<TargetLocation> targetLocations) {
+        final Map<String, TargetLocation> hashPathMap = new HashMap<>();
 
-        for (DownloadTarget downloadTarget : downloadTargets) {
+        for (TargetLocation targetLocation : targetLocations) {
             try {
-                final String checksum = calculateChecksum(downloadTarget);
+                final String checksum = calculateChecksum(targetLocation);
 
                 if (hashPathMap.containsKey(checksum)) {
                     // Was in the batch already as a duplicate
-                    downloadTarget.getTargetLocation().delete();
+                    targetLocation.delete();
                 } else {
-                    hashPathMap.put(checksum, downloadTarget);
+                    hashPathMap.put(checksum, targetLocation);
                 }
             } catch (final IOException e) {
                 log.error("Failed to calculate hash!", e);
@@ -37,7 +37,7 @@ public class HashConverter {
         return hashPathMap;
     }
 
-    private String calculateChecksum(final DownloadTarget downloadTarget) throws IOException {
-        return DigestUtils.sha256Hex(downloadTarget.getTargetLocation().inputStream());
+    private String calculateChecksum(final TargetLocation targetLocation) throws IOException {
+        return DigestUtils.sha256Hex(targetLocation.inputStream());
     }
 }

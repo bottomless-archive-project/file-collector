@@ -1,6 +1,7 @@
 package com.github.filecollector.service.download;
 
-import com.github.filecollector.service.domain.DownloadTarget;
+import com.github.filecollector.service.domain.SourceLocation;
+import com.github.filecollector.service.domain.TargetLocation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,11 +26,12 @@ public class SourceDownloader {
             .followRedirects(HttpClient.Redirect.ALWAYS)
             .build();
 
-    public Optional<DownloadTarget> downloadToFile(final DownloadTarget downloadTarget) {
-        log.debug("Downloading: {}", downloadTarget.getSourceLocation().getLocation());
+    public Optional<TargetLocation> downloadToFile(final SourceLocation sourceLocation,
+                                                   final TargetLocation targetLocation) {
+        log.info("Downloading: {}", sourceLocation.getLocation());
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(downloadTarget.getSourceLocation().getLocation())
+        final HttpRequest request = HttpRequest.newBuilder()
+                .uri(sourceLocation.getLocation())
                 .header("Accept-Encoding", "gzip")
                 .build();
 
@@ -42,23 +44,23 @@ public class SourceDownloader {
                     .orElse("");
 
             if (encoding.equals("gzip")) {
-                log.debug("File at {} is GZIP compressed!", downloadTarget.getSourceLocation().getLocation());
+                log.debug("File at {} is GZIP compressed!", sourceLocation.getLocation());
 
                 try (InputStream is = new GZIPInputStream(response.body())) {
-                    Files.copy(is, downloadTarget.getTargetLocation().getPath());
+                    Files.copy(is, targetLocation.getPath());
                 }
             } else {
-                Files.copy(response.body(), downloadTarget.getTargetLocation().getPath());
+                Files.copy(response.body(), targetLocation.getPath());
             }
 
-            return Optional.of(downloadTarget);
+            return Optional.of(targetLocation);
         } catch (IOException | InterruptedException | IllegalArgumentException e) {
             log.debug("Download failed for source: {} with reason: {}.",
-                    downloadTarget.getSourceLocation().getLocation(), e.getMessage());
+                    sourceLocation.getLocation(), e.getMessage());
 
             try {
-                if (downloadTarget.getTargetLocation().exists()) {
-                    downloadTarget.getTargetLocation().delete();
+                if (targetLocation.exists()) {
+                    targetLocation.delete();
                 }
             } catch (final IOException ex) {
                 log.error("Failed to delete file on the staging location!", ex);
