@@ -1,7 +1,7 @@
 package com.github.filecollector.service.deduplication;
 
 import com.github.filecollector.service.domain.DeduplicationResult;
-import com.github.filecollector.service.domain.TargetLocation;
+import com.github.filecollector.service.download.domain.TargetLocation;
 import com.github.filecollector.service.hash.HashConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

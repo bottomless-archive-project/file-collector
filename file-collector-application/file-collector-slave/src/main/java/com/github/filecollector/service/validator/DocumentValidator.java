@@ -1,6 +1,6 @@
 package com.github.filecollector.service.validator;
 
-import com.github.filecollector.service.domain.TargetLocation;
+import com.github.filecollector.service.download.domain.TargetLocation;
 import com.github.filecollector.service.validator.domain.DocumentType;
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.exception.TikaException;

@@ -1,6 +1,6 @@
 package com.github.filecollector.service.hash;
 
-import com.github.filecollector.service.domain.TargetLocation;
+import com.github.filecollector.service.download.domain.TargetLocation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;

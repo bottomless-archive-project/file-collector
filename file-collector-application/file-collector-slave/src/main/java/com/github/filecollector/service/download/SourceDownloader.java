@@ -1,7 +1,7 @@
 package com.github.filecollector.service.download;
 
-import com.github.filecollector.service.domain.SourceLocation;
-import com.github.filecollector.service.domain.TargetLocation;
+import com.github.filecollector.service.download.domain.SourceLocation;
+import com.github.filecollector.service.download.domain.TargetLocation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,7 +12,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
-import java.time.Duration;
 import java.util.Optional;
 import java.util.zip.GZIPInputStream;
 
@@ -21,10 +20,7 @@ import java.util.zip.GZIPInputStream;
 @RequiredArgsConstructor
 public class SourceDownloader {
 
-    private final HttpClient client = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .followRedirects(HttpClient.Redirect.ALWAYS)
-            .build();
+    private final HttpClient downloaderHttpClient;
 
     public Optional<TargetLocation> downloadToFile(final SourceLocation sourceLocation,
                                                    final TargetLocation targetLocation) {
@@ -36,7 +32,7 @@ public class SourceDownloader {
                 .build();
 
         try {
-            final HttpResponse<InputStream> response = client.send(request,
+            final HttpResponse<InputStream> response = downloaderHttpClient.send(request,
                     HttpResponse.BodyHandlers.ofInputStream());
 
             final String encoding = response.headers()

@@ -1,4 +1,4 @@
-package com.github.filecollector.service.domain;
+package com.github.filecollector.service.download.domain;
 
 import lombok.Builder;
 import lombok.Getter;

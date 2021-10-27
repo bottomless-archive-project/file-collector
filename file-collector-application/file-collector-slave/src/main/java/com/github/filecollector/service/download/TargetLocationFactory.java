@@ -1,8 +1,8 @@
 package com.github.filecollector.service.download;
 
 import com.github.filecollector.configuration.FileConfigurationProperties;
-import com.github.filecollector.service.domain.SourceLocation;
-import com.github.filecollector.service.domain.TargetLocation;
+import com.github.filecollector.service.download.domain.SourceLocation;
+import com.github.filecollector.service.download.domain.TargetLocation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -1,10 +1,10 @@
 package com.github.filecollector.command;
 
 import com.github.filecollector.service.deduplication.FileDeduplicator;
-import com.github.filecollector.service.domain.SourceLocation;
-import com.github.filecollector.service.domain.TargetLocation;
+import com.github.filecollector.service.download.domain.TargetLocation;
 import com.github.filecollector.service.download.DownloadFinalizer;
 import com.github.filecollector.service.download.SourceDownloader;
+import com.github.filecollector.service.download.SourceLocationFactory;
 import com.github.filecollector.service.download.TargetLocationFactory;
 import com.github.filecollector.service.validator.FileValidator;
 import com.github.filecollector.workunit.WorkUnitManipulator;
@@ -14,8 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
@@ -33,6 +31,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
     private final DownloadFinalizer downloadFinalizer;
     private final Semaphore commandRateLimitingSemaphore;
     private final ExecutorService commandExecutorService;
+    private final SourceLocationFactory sourceLocationFactory;
     private final TargetLocationFactory targetLocationFactory;
 
     @Override
@@ -46,19 +45,16 @@ public class FileDownloaderCommand implements CommandLineRunner {
                 log.info("Started processing work unit: {}.", workUnit.getId());
 
                 final List<TargetLocation> resultFiles = workUnit.getLocations().stream()
-                        .flatMap(downloadTarget -> {
-                            try {
-                                final SourceLocation sourceLocation = SourceLocation.builder()
-                                        .location(new URI(downloadTarget))
-                                        .build();
-                                final TargetLocation targetLocation = targetLocationFactory.newTargetLocation(
-                                        sourceLocation);
+                        .flatMap(downloadTarget ->
+                                sourceLocationFactory.newSourceLocation(downloadTarget)
+                                        .flatMap(sourceLocation -> {
+                                            final TargetLocation targetLocation = targetLocationFactory
+                                                    .newTargetLocation(sourceLocation);
 
-                                return sourceDownloader.downloadToFile(sourceLocation, targetLocation).stream();
-                            } catch (URISyntaxException e) {
-                                return Stream.empty();
-                            }
-                        })
+                                            return sourceDownloader.downloadToFile(sourceLocation, targetLocation);
+                                        })
+                                        .stream()
+                        )
                         .flatMap(targetLocation -> fileValidator.validateFile(targetLocation).stream())
                         .toList();
 
