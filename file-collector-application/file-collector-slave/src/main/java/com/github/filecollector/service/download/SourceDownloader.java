@@ -6,11 +6,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.zip.GZIPInputStream;
 
 @Slf4j
 @Service
@@ -23,15 +26,30 @@ public class SourceDownloader {
             .build();
 
     public Optional<DownloadTarget> downloadToFile(final DownloadTarget downloadTarget) {
-        log.info("Downloading: {}", downloadTarget.getSourceLocation().getLocation());
+        log.debug("Downloading: {}", downloadTarget.getSourceLocation().getLocation());
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(downloadTarget.getSourceLocation().getLocation())
+                .header("Accept-Encoding", "gzip")
                 .build();
 
         try {
-            client.send(request, HttpResponse.BodyHandlers.ofFile(
-                    downloadTarget.getTargetLocation().getPath()));
+            final HttpResponse<InputStream> response = client.send(request,
+                    HttpResponse.BodyHandlers.ofInputStream());
+
+            final String encoding = response.headers()
+                    .firstValue("Content-Encoding")
+                    .orElse("");
+
+            if (encoding.equals("gzip")) {
+                log.debug("File at {} is GZIP compressed!", downloadTarget.getSourceLocation().getLocation());
+
+                try (InputStream is = new GZIPInputStream(response.body())) {
+                    Files.copy(is, downloadTarget.getTargetLocation().getPath());
+                }
+            } else {
+                Files.copy(response.body(), downloadTarget.getTargetLocation().getPath());
+            }
 
             return Optional.of(downloadTarget);
         } catch (IOException | InterruptedException | IllegalArgumentException e) {
