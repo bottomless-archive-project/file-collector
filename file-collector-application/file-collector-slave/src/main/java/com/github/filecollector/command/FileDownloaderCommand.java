@@ -44,7 +44,7 @@ public class FileDownloaderCommand implements CommandLineRunner {
 
                 final List<DownloadTarget> resultFiles = workUnit.getLocations().stream()
                         .flatMap(location -> downloadTargetConverter.convert(location).stream())
-                        .flatMap(downloadTarget1 -> sourceDownloader.downloadToFile(downloadTarget1).stream())
+                        .flatMap(downloadTarget -> sourceDownloader.downloadToFile(downloadTarget).stream())
                         .flatMap(downloadTarget -> downloadTargetValidator.validateFiles(downloadTarget).stream())
                         .toList();
 
