@@ -23,19 +23,19 @@ public class FileDeduplicator {
 
         final Map<String, TargetLocation> hashPathMap = hashConverter.createHashesWithoutDuplicates(downloadTargets);
 
-        return fileDeduplicationClient.deduplicateFiles(hashPathMap.keySet()).stream()
-                .flatMap(uniqueHashes -> uniqueHashes.stream()
-                        .map(hash -> {
-                            final TargetLocation downloadTarget = hashPathMap.get(hash);
+        final List<String> uniqueHashes = fileDeduplicationClient.deduplicateFiles(hashPathMap.keySet());
 
-                            return DeduplicationResult.builder()
-                                    .duplicate(!uniqueHashes.contains(hash))
-                                    .fileLocation(downloadTarget)
-                                    .hash(hash)
-                                    .extension(downloadTarget.getExtension())
-                                    .build();
-                        })
-                )
+        return uniqueHashes.stream()
+                .map(hash -> {
+                    final TargetLocation downloadTarget = hashPathMap.get(hash);
+
+                    return DeduplicationResult.builder()
+                            .duplicate(!uniqueHashes.contains(hash))
+                            .fileLocation(downloadTarget)
+                            .hash(hash)
+                            .extension(downloadTarget.getExtension())
+                            .build();
+                })
                 .toList();
     }
 }

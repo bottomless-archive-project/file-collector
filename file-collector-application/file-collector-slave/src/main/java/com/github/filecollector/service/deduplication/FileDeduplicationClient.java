@@ -25,7 +25,7 @@ public class FileDeduplicationClient {
     private final WebClient webClient;
     private final MasterServerConfigurationProperties masterServerConfigurationProperties;
 
-    public List<List<String>> deduplicateFiles(final Set<String> hashes) {
+    public List<String> deduplicateFiles(final Set<String> hashes) {
         log.info("Deduplicating {} files.", hashes.size());
 
         final DocumentDeduplicationRequest documentDeduplicationRequest = DocumentDeduplicationRequest.builder()
@@ -46,7 +46,6 @@ public class FileDeduplicationClient {
 
                     return documentDeduplicationResponse.getHashes();
                 })
-                .buffer()
                 .blockLast();
     }
 }

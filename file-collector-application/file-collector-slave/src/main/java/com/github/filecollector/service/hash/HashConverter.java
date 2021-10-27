@@ -21,13 +21,13 @@ public class HashConverter {
 
         for (TargetLocation targetLocation : targetLocations) {
             try {
-                final String checksum = calculateChecksum(targetLocation);
+                final String hash = calculateHash(targetLocation);
 
-                if (hashPathMap.containsKey(checksum)) {
+                if (hashPathMap.containsKey(hash)) {
                     // Was in the batch already as a duplicate
                     targetLocation.delete();
                 } else {
-                    hashPathMap.put(checksum, targetLocation);
+                    hashPathMap.put(hash, targetLocation);
                 }
             } catch (final IOException e) {
                 log.error("Failed to calculate hash!", e);
@@ -37,7 +37,7 @@ public class HashConverter {
         return hashPathMap;
     }
 
-    private String calculateChecksum(final TargetLocation targetLocation) throws IOException {
+    private String calculateHash(final TargetLocation targetLocation) throws IOException {
         return DigestUtils.sha256Hex(targetLocation.inputStream());
     }
 }
