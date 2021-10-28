@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,7 +32,13 @@ public class FileValidator {
             final boolean validationResult = validators.stream()
                     .filter(v -> v.isValidatorFor(extension))
                     .findFirst()
-                    .map(v -> v.validate(targetLocation, extension))
+                    .map(validator -> {
+                        try {
+                            return validator.validate(Files.newInputStream(targetLocation.getPath()), extension);
+                        } catch (IOException e) {
+                            return false;
+                        }
+                    })
                     .orElse(true);
 
             if (!validationResult) {
