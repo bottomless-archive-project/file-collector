@@ -1,6 +1,7 @@
 package com.github.filecollector.command.configuration;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -8,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class ExecutorConfiguration {
@@ -16,7 +18,11 @@ public class ExecutorConfiguration {
 
     @Bean
     public ExecutorService commandExecutorService() {
-        return Executors.newFixedThreadPool(executionConfigurationProperties.getParallelismTarget());
+        final int parallelismTarget = executionConfigurationProperties.getParallelismTarget();
+
+        log.info("Initializing the application with parallelism target of {}.", parallelismTarget);
+
+        return Executors.newFixedThreadPool(parallelismTarget);
     }
 
     @Bean
