@@ -29,6 +29,7 @@ public class WorkUnitClient {
     private final HttpClient httpClient;
     private final MasterServerConfigurationProperties masterServerConfigurationProperties;
     private final BodyAdapter.Decoder decoder = JacksonAdapterFactory.createDecoder();
+    private final BodyAdapter.Encoder encoder = JacksonAdapterFactory.createEncoder();
 
     @SneakyThrows
     @Retryable(maxAttempts = Integer.MAX_VALUE, backoff = @Backoff(delay = 30000))
@@ -89,7 +90,7 @@ public class WorkUnitClient {
 
         final HttpRequest httpRequest = HttpRequest.newBuilder()
                 .uri(endWorkUnitLocation)
-                .POST(MoreBodyPublishers.ofObject(closeWorkUnitRequest, MediaType.APPLICATION_JSON))
+                .POST(encoder.toBody(closeWorkUnitRequest, MediaType.APPLICATION_JSON))
                 .build();
 
         httpClient.send(httpRequest, HttpResponse.BodyHandlers.discarding());
