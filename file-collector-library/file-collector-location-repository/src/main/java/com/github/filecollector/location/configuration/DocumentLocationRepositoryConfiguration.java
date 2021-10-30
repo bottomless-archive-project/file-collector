@@ -12,6 +12,6 @@ public class DocumentLocationRepositoryConfiguration {
     @Bean
     public MongoCollection<DocumentLocationDatabaseEntity> documentLocationDatabaseEntityMongoCollection(
             final MongoDatabase mongoDatabase) {
-        return mongoDatabase.getCollection("documents_locations", DocumentLocationDatabaseEntity.class);
+        return mongoDatabase.getCollection("document_locations", DocumentLocationDatabaseEntity.class);
     }
 }
