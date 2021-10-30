@@ -81,18 +81,24 @@ public class WorkUnitClient {
     @SneakyThrows
     @Retryable(maxAttempts = Integer.MAX_VALUE, backoff = @Backoff(delay = 30000))
     public void closeWorkUnit(final WorkUnit workUnit) {
-        final URI endWorkUnitLocation = URI.create(masterServerConfigurationProperties.getMasterLocation()
-                + "/work-unit/close-work");
+        try {
+            final URI endWorkUnitLocation = URI.create(masterServerConfigurationProperties.getMasterLocation()
+                    + "/work-unit/close-work");
 
-        final CloseWorkUnitRequest closeWorkUnitRequest = CloseWorkUnitRequest.builder()
-                .workUnitId(workUnit.getId().toString())
-                .build();
+            final CloseWorkUnitRequest closeWorkUnitRequest = CloseWorkUnitRequest.builder()
+                    .workUnitId(workUnit.getId().toString())
+                    .build();
 
-        final HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(endWorkUnitLocation)
-                .POST(encoder.toBody(closeWorkUnitRequest, MediaType.APPLICATION_JSON))
-                .build();
+            final HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(endWorkUnitLocation)
+                    .POST(encoder.toBody(closeWorkUnitRequest, MediaType.APPLICATION_JSON))
+                    .build();
 
-        httpClient.send(httpRequest, HttpResponse.BodyHandlers.discarding());
+            httpClient.send(httpRequest, HttpResponse.BodyHandlers.discarding());
+        } catch (Exception e) {
+            log.error("Exception while doing closing work unit request!", e);
+
+            throw e;
+        }
     }
 }

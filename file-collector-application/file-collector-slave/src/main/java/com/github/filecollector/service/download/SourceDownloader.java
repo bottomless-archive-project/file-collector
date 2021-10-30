@@ -21,7 +21,7 @@ public class SourceDownloader {
 
     public Optional<TargetLocation> downloadToFile(final SourceLocation sourceLocation,
                                                    final TargetLocation targetLocation) {
-        log.info("Downloading: {}", sourceLocation.getLocation());
+        log.debug("Downloading: {}", sourceLocation.getLocation());
 
         try {
             final HttpRequest request = HttpRequest.newBuilder()

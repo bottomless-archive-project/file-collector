@@ -33,24 +33,30 @@ public class FileDeduplicationClient {
     @SneakyThrows
     @Retryable(maxAttempts = Integer.MAX_VALUE, backoff = @Backoff(delay = 30000))
     public List<String> deduplicateFiles(final Set<String> hashes) {
-        log.info("Deduplicating {} files.", hashes.size());
+        try {
+            log.info("Deduplicating {} files.", hashes.size());
 
-        final DocumentDeduplicationRequest documentDeduplicationRequest = DocumentDeduplicationRequest.builder()
-                .hashes(hashes)
-                .build();
+            final DocumentDeduplicationRequest documentDeduplicationRequest = DocumentDeduplicationRequest.builder()
+                    .hashes(hashes)
+                    .build();
 
-        final HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(masterServerConfigurationProperties.getMasterLocation() + "/document"))
-                .POST(encoder.toBody(documentDeduplicationRequest, MediaType.APPLICATION_JSON))
-                .build();
+            final HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(masterServerConfigurationProperties.getMasterLocation() + "/document"))
+                    .POST(encoder.toBody(documentDeduplicationRequest, MediaType.APPLICATION_JSON))
+                    .build();
 
-        DocumentDeduplicationResponse documentDeduplicationResponse = httpClient.send(
-                httpRequest, info -> decoder.toObject(new TypeRef<DocumentDeduplicationResponse>() {
-                }, MediaType.APPLICATION_JSON)).body();
+            DocumentDeduplicationResponse documentDeduplicationResponse = httpClient.send(
+                    httpRequest, info -> decoder.toObject(new TypeRef<DocumentDeduplicationResponse>() {
+                    }, MediaType.APPLICATION_JSON)).body();
 
-        log.info("From the sent {} file hashes {} was unique.", hashes.size(),
-                documentDeduplicationResponse.getHashes().size());
+            log.info("From the sent {} file hashes {} was unique.", hashes.size(),
+                    documentDeduplicationResponse.getHashes().size());
 
-        return documentDeduplicationResponse.getHashes();
+            return documentDeduplicationResponse.getHashes();
+        } catch (Exception e) {
+            log.error("Exception while doing the deduplication request!", e);
+
+            throw e;
+        }
     }
 }
