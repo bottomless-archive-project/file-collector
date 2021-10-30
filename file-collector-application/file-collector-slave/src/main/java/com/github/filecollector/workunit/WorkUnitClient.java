@@ -33,41 +33,47 @@ public class WorkUnitClient {
     @SneakyThrows
     @Retryable(maxAttempts = Integer.MAX_VALUE, backoff = @Backoff(delay = 30000))
     public Optional<WorkUnit> startWorkUnit() {
-        log.info("Requesting new work unit.");
+        try {
+            log.info("Requesting new work unit.");
 
-        final URI startWorkUnitLocation = URI.create(masterServerConfigurationProperties.getMasterLocation()
-                + "/work-unit/start-work");
+            final URI startWorkUnitLocation = URI.create(masterServerConfigurationProperties.getMasterLocation()
+                    + "/work-unit/start-work");
 
-        final HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(startWorkUnitLocation)
-                .POST(BodyPublishers.noBody())
-                .build();
+            final HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(startWorkUnitLocation)
+                    .POST(BodyPublishers.noBody())
+                    .build();
 
-        HttpResponse<StartWorkUnitResponse> startWorkUnitHttpResponse = httpClient.send(
-                httpRequest, MoreBodyHandlers.ofObject(StartWorkUnitResponse.class));
+            HttpResponse<StartWorkUnitResponse> startWorkUnitHttpResponse = httpClient.send(
+                    httpRequest, MoreBodyHandlers.ofObject(StartWorkUnitResponse.class));
 
-        if (startWorkUnitHttpResponse.statusCode() == HttpStatus.NO_CONTENT.value()) {
-            log.info("Got no content as a response for the work unit request. No processable work unit found.");
+            if (startWorkUnitHttpResponse.statusCode() == HttpStatus.NO_CONTENT.value()) {
+                log.info("Got no content as a response for the work unit request. No processable work unit found.");
 
-            return Optional.empty();
+                return Optional.empty();
+            }
+
+            final StartWorkUnitResponse startWorkUnitResponse = startWorkUnitHttpResponse.body();
+
+            if (startWorkUnitResponse == null) {
+                log.error("Got null as a work unit response! Status: {}!", startWorkUnitHttpResponse.statusCode());
+
+                return Optional.empty();
+            }
+
+            log.info("Returning the result of the work unit request.");
+
+            return Optional.of(
+                    WorkUnit.builder()
+                            .id(startWorkUnitResponse.getId())
+                            .locations(startWorkUnitResponse.getLocations())
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Exception while doing a start work unit request!", e);
+
+            throw e;
         }
-
-        final StartWorkUnitResponse startWorkUnitResponse = startWorkUnitHttpResponse.body();
-
-        if (startWorkUnitResponse == null) {
-            log.error("Got null as a work unit response! Status: {}!", startWorkUnitHttpResponse.statusCode());
-
-            return Optional.empty();
-        }
-
-        log.info("Returning the result of the work unit request.");
-
-        return Optional.of(
-                WorkUnit.builder()
-                        .id(startWorkUnitResponse.getId())
-                        .locations(startWorkUnitResponse.getLocations())
-                        .build()
-        );
     }
 
     @SneakyThrows
