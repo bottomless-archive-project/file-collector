@@ -15,8 +15,4 @@ dependencies {
     implementation group: 'com.github.mizosoft.methanol', name: 'methanol', version: '1.6.0'
     implementation group: 'com.github.mizosoft.methanol', name: 'methanol-brotli', version: '1.6.0'
     implementation group: 'com.github.mizosoft.methanol', name: 'methanol-jackson', version: '1.6.0'
-
-    implementation group: 'com.google.auto.service', name: 'auto-service', version: '1.0'
-    annotationProcessor group: 'com.google.auto.service', name: 'auto-service', version: '1.0'
-    implementation group: 'com.google.auto.service', name: 'auto-service-annotations', version: '1.0'
 }

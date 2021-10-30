@@ -4,9 +4,8 @@ import com.github.filecollector.configuration.MasterServerConfigurationPropertie
 import com.github.filecollector.workunit.domain.WorkUnit;
 import com.github.filecollector.workunit.view.request.CloseWorkUnitRequest;
 import com.github.filecollector.workunit.view.response.StartWorkUnitResponse;
-import com.github.mizosoft.methanol.MediaType;
-import com.github.mizosoft.methanol.MoreBodyHandlers;
-import com.github.mizosoft.methanol.MoreBodyPublishers;
+import com.github.mizosoft.methanol.*;
+import com.github.mizosoft.methanol.adapter.jackson.JacksonAdapterFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +28,7 @@ public class WorkUnitClient {
 
     private final HttpClient httpClient;
     private final MasterServerConfigurationProperties masterServerConfigurationProperties;
+    private final BodyAdapter.Decoder decoder = JacksonAdapterFactory.createDecoder();
 
     @SneakyThrows
     @Retryable(maxAttempts = Integer.MAX_VALUE, backoff = @Backoff(delay = 30000))
@@ -45,7 +45,8 @@ public class WorkUnitClient {
                     .build();
 
             HttpResponse<StartWorkUnitResponse> startWorkUnitHttpResponse = httpClient.send(
-                    httpRequest, MoreBodyHandlers.ofObject(StartWorkUnitResponse.class));
+                    httpRequest, info -> decoder.toObject(new TypeRef<>() {
+                    }, MediaType.APPLICATION_JSON));
 
             if (startWorkUnitHttpResponse.statusCode() == HttpStatus.NO_CONTENT.value()) {
                 log.info("Got no content as a response for the work unit request. No processable work unit found.");

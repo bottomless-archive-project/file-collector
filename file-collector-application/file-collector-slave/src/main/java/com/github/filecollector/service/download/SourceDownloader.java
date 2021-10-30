@@ -23,12 +23,12 @@ public class SourceDownloader {
                                                    final TargetLocation targetLocation) {
         log.info("Downloading: {}", sourceLocation.getLocation());
 
-        final HttpRequest request = HttpRequest.newBuilder()
-                .uri(sourceLocation.getLocation())
-                .header("Accept-Encoding", "gzip")
-                .build();
-
         try {
+            final HttpRequest request = HttpRequest.newBuilder()
+                    .uri(sourceLocation.getLocation())
+                    .header("Accept-Encoding", "gzip")
+                    .build();
+
             httpClient.send(request, HttpResponse.BodyHandlers.ofFile(targetLocation.getPath()));
         } catch (IOException | InterruptedException | IllegalArgumentException e) {
             log.debug("Download failed for source: {} with reason: {}.",
