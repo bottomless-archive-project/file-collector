@@ -18,7 +18,7 @@ public class WorkUnitManipulator {
         Optional<WorkUnit> workUnit;
 
         do {
-            log.info("Loading next work unit.");
+            log.info("Starting a new work unit.");
 
             workUnit = workUnitClient.startWorkUnit();
 
