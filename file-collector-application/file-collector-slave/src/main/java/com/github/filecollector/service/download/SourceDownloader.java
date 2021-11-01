@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Optional;
 
 @Slf4j
@@ -26,7 +27,7 @@ public class SourceDownloader {
         try {
             final HttpRequest request = HttpRequest.newBuilder()
                     .uri(sourceLocation.getLocation())
-                    .header("Accept-Encoding", "gzip")
+                    .timeout(Duration.ofSeconds(10))
                     .build();
 
             httpClient.send(request, HttpResponse.BodyHandlers.ofFile(targetLocation.getPath()));
