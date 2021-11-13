@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 
@@ -43,6 +44,7 @@ public class FileDeduplicationClient {
             final HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(masterServerConfigurationProperties.getMasterLocation() + "/document"))
                     .POST(encoder.toBody(documentDeduplicationRequest, MediaType.APPLICATION_JSON))
+                    .timeout(Duration.ofSeconds(10))
                     .build();
 
             DocumentDeduplicationResponse documentDeduplicationResponse = httpClient.send(

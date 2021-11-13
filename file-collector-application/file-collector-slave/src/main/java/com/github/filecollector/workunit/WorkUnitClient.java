@@ -19,6 +19,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Optional;
 
 @Slf4j
@@ -43,6 +44,7 @@ public class WorkUnitClient {
             final HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(startWorkUnitLocation)
                     .POST(BodyPublishers.noBody())
+                    .timeout(Duration.ofSeconds(10))
                     .build();
 
             HttpResponse<StartWorkUnitResponse> startWorkUnitHttpResponse = httpClient.send(
@@ -92,6 +94,7 @@ public class WorkUnitClient {
             final HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(endWorkUnitLocation)
                     .POST(encoder.toBody(closeWorkUnitRequest, MediaType.APPLICATION_JSON))
+                    .timeout(Duration.ofSeconds(10))
                     .build();
 
             httpClient.send(httpRequest, HttpResponse.BodyHandlers.discarding());

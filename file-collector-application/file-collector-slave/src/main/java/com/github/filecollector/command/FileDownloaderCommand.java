@@ -45,16 +45,13 @@ public class FileDownloaderCommand implements CommandLineRunner {
                 log.info("Started processing work unit: {}.", workUnit.getId());
 
                 final List<TargetLocation> resultFiles = workUnit.getLocations().stream()
-                        .flatMap(downloadTarget ->
-                                sourceLocationFactory.newSourceLocation(downloadTarget)
-                                        .flatMap(sourceLocation -> {
-                                            final TargetLocation targetLocation = targetLocationFactory
-                                                    .newTargetLocation(sourceLocation);
+                        .flatMap(downloadTarget -> sourceLocationFactory.newSourceLocation(downloadTarget).stream())
+                        .flatMap(sourceLocation -> {
+                            final TargetLocation targetLocation = targetLocationFactory
+                                    .newTargetLocation(sourceLocation);
 
-                                            return sourceDownloader.downloadToFile(sourceLocation, targetLocation);
-                                        })
-                                        .stream()
-                        )
+                            return sourceDownloader.downloadToFile(sourceLocation, targetLocation).stream();
+                        })
                         .flatMap(targetLocation -> fileValidator.validateFile(targetLocation).stream())
                         .toList();
 
